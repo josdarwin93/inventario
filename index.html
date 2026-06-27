@@ -14,6 +14,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   :root{
     --side:#1b2a4a; --side2:#13203a; --side-hover:#33406b;
@@ -179,6 +181,17 @@
   @keyframes slideout{to{opacity:0;transform:translateX(30px)}}
 
   .menu-btn{display:none;background:none;border:none;font-size:22px;cursor:pointer;color:var(--tinta)}
+
+  /* foto de producto */
+  .photo-drop{width:120px;height:120px;border:2px dashed var(--linea2);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:var(--bg);text-align:center;position:relative}
+  .photo-drop:hover{border-color:var(--azul)}
+  .photo-drop span{font-size:11px;color:var(--tenue);line-height:1.5}
+  .photo-drop img{width:100%;height:100%;object-fit:cover;display:none}
+  .photo-drop.has img{display:block}
+  .photo-drop.has span{display:none}
+  .inv-thumb{width:38px;height:38px;border-radius:7px;object-fit:cover;background:var(--bg);border:1px solid var(--linea);display:block}
+  .inv-thumb-ph{width:38px;height:38px;border-radius:7px;background:var(--bg);border:1px solid var(--linea);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--linea2)}
+  .pc-photo{width:54px;height:54px;border-radius:11px;object-fit:cover;flex-shrink:0}
   @media(max-width:860px){
     .side{position:fixed;left:-220px;z-index:50;transition:.25s;box-shadow:4px 0 24px rgba(0,0,0,.2)}
     .side.open{left:0}.menu-btn{display:block}
@@ -257,34 +270,51 @@
       <!-- INVENTARIO -->
       <section class="panel-sec" id="inventario">
         <div class="card">
-          <h3>Nuevo producto</h3>
-          <div class="row4">
-            <div class="field"><label>Código (cód. barra)</label><input id="p-code" placeholder="Escanea o escribe"></div>
-            <div class="field"><label>Nombre</label><input id="p-name" placeholder="Ej: Lápiz HB"></div>
-            <div class="field"><label>Categoría</label><input id="p-cat" placeholder="Ej: Papelería"></div>
-            <div class="field"><label>Presentación</label><input id="p-pres" placeholder="Ej: Unidad, Caja"></div>
+          <h3 id="prod-form-title">Nuevo producto</h3>
+          <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start">
+            <div style="flex:0 0 auto">
+              <label>Foto (opcional)</label>
+              <div id="photo-drop" class="photo-drop">
+                <img id="photo-preview" alt="">
+                <span id="photo-placeholder">📷<br>Tocar para<br>agregar foto</span>
+              </div>
+              <input id="p-photo-file" type="file" accept="image/*" style="display:none">
+              <button class="btn ghost sm" id="btn-photo-remove" style="display:none;margin-top:8px;width:100%">Quitar foto</button>
+            </div>
+            <div style="flex:1;min-width:260px">
+              <div class="row">
+                <div class="field"><label>Código (cód. barra)</label><input id="p-code" placeholder="Escanea o escribe"></div>
+                <div class="field"><label>Nombre</label><input id="p-name" placeholder="Ej: Lápiz HB"></div>
+              </div>
+              <div class="row">
+                <div class="field"><label>Categoría</label><input id="p-cat" placeholder="Ej: Papelería"></div>
+                <div class="field"><label>Presentación</label><input id="p-pres" placeholder="Ej: Unidad, Caja"></div>
+              </div>
+              <div class="row3">
+                <div class="field"><label id="p-stock-label">Cantidad inicial</label><input id="p-stock" type="number" min="0" value="0"></div>
+                <div class="field"><label>Stock mínimo</label><input id="p-min" type="number" min="0" value="5"></div>
+                <div class="field"><label>Precio unitario (USD)</label><input id="p-price" type="number" min="0" step="0.01" value="0.00"></div>
+              </div>
+            </div>
           </div>
-          <div class="row3">
-            <div class="field"><label>Cantidad inicial</label><input id="p-stock" type="number" min="0" value="0"></div>
-            <div class="field"><label>Stock mínimo</label><input id="p-min" type="number" min="0" value="5"></div>
-            <div class="field"><label>Precio unitario (USD)</label><input id="p-price" type="number" min="0" step="0.01" value="0.00"></div>
-          </div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
             <button class="btn" id="btn-addprod">Guardar producto</button>
             <button class="btn ghost" id="btn-clearprod">Limpiar</button>
+            <button class="btn ghost" id="btn-canceledit" style="display:none">Cancelar edición</button>
           </div>
         </div>
         <div class="sec-title">Hoja de inventario</div>
         <div class="filterbar">
           <input id="inv-search" placeholder="Buscar por nombre o código…">
           <div class="spacer"></div>
+          <button class="btn ghost sm" id="btn-pdf-inv">⬇ PDF</button>
           <button class="btn ghost sm" id="btn-seed">Cargar datos demo</button>
           <button class="btn ghost sm" id="btn-export-inv-xls">⬇ Excel</button>
           <button class="btn ghost sm" id="btn-export-inv">CSV</button>
         </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-inv">
-            <thead><tr><th>Código</th><th>Nombre</th><th>Categoría</th><th class="r">Cantidad</th><th>Presentación</th><th class="r">Stock Mínimo</th><th class="r">Precio (USD)</th><th>Última Actualización</th><th></th></tr></thead>
+            <thead><tr><th></th><th>Código</th><th>Nombre</th><th>Categoría</th><th class="r">Cantidad</th><th>Presentación</th><th class="r">Stock Mínimo</th><th class="r">Precio (USD)</th><th>Última Actualización</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
           <div class="empty" id="empty-inv"><div class="big">Hoja vacía</div>Agrega productos o carga los datos demo.</div>
@@ -329,7 +359,7 @@
 
         <div class="prodcard" id="prodcard">
           <div class="pc-head">
-            <div class="pc-icon">📦</div>
+            <div class="pc-icon" id="pc-icon">📦</div>
             <div class="pc-info"><div class="nm" id="pc-name">—</div><div class="meta" id="pc-meta">—</div></div>
             <div class="pc-stock" id="pc-stock"><div class="num" id="pc-stocknum">0</div><div class="lbl">En stock</div></div>
           </div>
@@ -581,10 +611,12 @@ function renderInv(){
   const list=productos.filter(p=>p.name.toLowerCase().includes(q)||p.code.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
   $('#empty-inv').style.display=productos.length?'none':'block';
   list.forEach(p=>{const st=stockOf(p.code),low=st<=(p.min||0),lu=lastUpdate(p.code);
-    tb.insertAdjacentHTML('beforeend',`<tr class="${low?'rowlow':''}"><td class="mono">${esc(p.code)}</td><td>${esc(p.name)}</td><td>${esc(p.cat||'—')}</td>
+    const thumb=p.photo?`<img class="inv-thumb" src="${p.photo}" alt="">`:`<div class="inv-thumb-ph">📦</div>`;
+    tb.insertAdjacentHTML('beforeend',`<tr class="${low?'rowlow':''}"><td>${thumb}</td><td class="mono">${esc(p.code)}</td><td>${esc(p.name)}</td><td>${esc(p.cat||'—')}</td>
       <td class="r qty-strong">${st}${low?' <span class="tag low">bajo</span>':''}</td><td>${esc(p.pres||'—')}</td><td class="r">${p.min||0}</td><td class="r">${money(p.price||0)}</td>
-      <td>${lu?dPart(lu):'—'}</td><td class="r"><button class="btn danger sm" data-del="${esc(p.code)}">Eliminar</button></td></tr>`);});
+      <td>${lu?dPart(lu):'—'}</td><td class="r" style="white-space:nowrap"><button class="btn ghost sm" data-edit="${esc(p.code)}">Editar</button> <button class="btn danger sm" data-del="${esc(p.code)}">Eliminar</button></td></tr>`);});
   tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>delProd(b.dataset.del));
+  tb.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editProd(b.dataset.edit));
 }
 function renderMov(){
   const q=($('#mov-search').value||'').toLowerCase(),tf=$('#mov-type').value;
@@ -631,23 +663,100 @@ function renderDash(){
 }
 
 /* ====== PRODUCTOS (escriben en Firestore) ====== */
+let editCode=null;        // si no es null, estamos editando ese producto
+let photoData='';         // foto en base64 (o '' si no hay)
+
+/* --- manejo de foto: comprimir antes de guardar --- */
+$('#photo-drop').onclick=()=>$('#p-photo-file').click();
+$('#p-photo-file').onchange=e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      // redimensionar a máx 400px y comprimir a JPEG
+      const max=400;let w=img.width,h=img.height;
+      if(w>h&&w>max){h=Math.round(h*max/w);w=max;}
+      else if(h>max){w=Math.round(w*max/h);h=max;}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      photoData=cv.toDataURL('image/jpeg',0.7);
+      mostrarFoto(photoData);
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+function mostrarFoto(data){
+  const drop=$('#photo-drop'),img=$('#photo-preview');
+  if(data){img.src=data;drop.classList.add('has');$('#btn-photo-remove').style.display='block';}
+  else{img.src='';drop.classList.remove('has');$('#btn-photo-remove').style.display='none';}
+}
+$('#btn-photo-remove').onclick=()=>{photoData='';$('#p-photo-file').value='';mostrarFoto('');};
+
+/* --- guardar (crea o edita según el modo) --- */
 $('#btn-addprod').onclick=async()=>{
   const code=$('#p-code').value.trim(),name=$('#p-name').value.trim();
   if(!code){toast({kind:'err',msg:'Ingresa el código de barras'});return;}
   if(!name){toast({kind:'err',msg:'Ingresa el nombre del producto'});return;}
-  if(prodOf(code)){toast({kind:'err',msg:'Ya existe un producto con ese código'});return;}
-  const initial=parseInt($('#p-stock').value)||0,min=parseInt($('#p-min').value)||0;
+  const min=parseInt($('#p-min').value)||0,price=parseFloat($('#p-price').value)||0;
+  const cat=$('#p-cat').value.trim(),pres=$('#p-pres').value.trim();
   try{
-    await setDoc(doc(db,'negocios',user.uid,'productos',code),{name,cat:$('#p-cat').value.trim(),pres:$('#p-pres').value.trim(),initial,min,price:parseFloat($('#p-price').value)||0,created:serverTimestamp()});
-    clearProdForm();
-    toast({kind:'ok',title:'Producto guardado',msg:`${name} (${code}) · stock inicial ${initial}`});
-    if(initial<=min)toast({kind:'warn',title:'Stock bajo',msg:`${name} inicia con ${initial}, por debajo del mínimo (${min})`,long:true});
-  }catch(e){toast({kind:'err',title:'No se pudo guardar',msg:e.message,long:true});}
+    if(editCode){
+      // EDITAR: conservamos initial y created; actualizamos el resto
+      const p=prodOf(editCode);
+      const datos={name,cat,pres,min,price,initial:p.initial||0,created:p.created||serverTimestamp(),photo:photoData||''};
+      await setDoc(doc(db,'negocios',user.uid,'productos',editCode),datos);
+      toast({kind:'ok',title:'Producto actualizado',msg:name});
+      salirEdicion();
+    }else{
+      if(prodOf(code)){toast({kind:'err',msg:'Ya existe un producto con ese código'});return;}
+      const initial=parseInt($('#p-stock').value)||0;
+      await setDoc(doc(db,'negocios',user.uid,'productos',code),{name,cat,pres,initial,min,price,photo:photoData||'',created:serverTimestamp()});
+      clearProdForm();
+      toast({kind:'ok',title:'Producto guardado',msg:`${name} (${code}) · stock inicial ${initial}`});
+      if(initial<=min)toast({kind:'warn',title:'Stock bajo',msg:`${name} inicia con ${initial}, por debajo del mínimo (${min})`,long:true});
+    }
+  }catch(e){
+    let m=e.message;
+    if(e.code==='resource-exhausted'||/size|exceed|larger/i.test(m))m='La foto es muy pesada. Prueba con una imagen más pequeña.';
+    toast({kind:'err',title:'No se pudo guardar',msg:m,long:true});
+  }
 };
-function clearProdForm(){['p-code','p-name','p-cat','p-pres'].forEach(i=>$('#'+i).value='');$('#p-stock').value=0;$('#p-min').value=5;$('#p-price').value='0.00';}
-$('#btn-clearprod').onclick=clearProdForm;
+function clearProdForm(){['p-code','p-name','p-cat','p-pres'].forEach(i=>$('#'+i).value='');$('#p-stock').value=0;$('#p-min').value=5;$('#p-price').value='0.00';photoData='';$('#p-photo-file').value='';mostrarFoto('');}
+$('#btn-clearprod').onclick=()=>{if(editCode)salirEdicion();else clearProdForm();};
+
+/* --- entrar / salir del modo edición --- */
+function editProd(code){
+  const p=prodOf(code);if(!p)return;
+  editCode=code;
+  $('#prod-form-title').textContent='Editar producto';
+  $('#btn-addprod').textContent='Guardar cambios';
+  $('#btn-clearprod').style.display='none';
+  $('#btn-canceledit').style.display='inline-flex';
+  $('#p-code').value=code;$('#p-code').disabled=true; // el código no se cambia
+  $('#p-name').value=p.name||'';$('#p-cat').value=p.cat||'';$('#p-pres').value=p.pres||'';
+  $('#p-min').value=p.min||0;$('#p-price').value=(p.price||0).toFixed(2);
+  // en edición, ocultamos "cantidad inicial" (se ajusta con movimientos, no aquí)
+  $('#p-stock').value=p.initial||0;$('#p-stock').closest('.field').style.display='none';
+  photoData=p.photo||'';mostrarFoto(photoData);
+  goTab('inventario');
+  document.querySelector('#inventario .card').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function salirEdicion(){
+  editCode=null;
+  $('#prod-form-title').textContent='Nuevo producto';
+  $('#btn-addprod').textContent='Guardar producto';
+  $('#btn-clearprod').style.display='inline-flex';
+  $('#btn-canceledit').style.display='none';
+  $('#p-code').disabled=false;
+  $('#p-stock').closest('.field').style.display='';
+  clearProdForm();
+}
+$('#btn-canceledit').onclick=salirEdicion;
+
 async function delProd(code){const p=prodOf(code);if(!confirm('¿Eliminar "'+(p?p.name:code)+'"? Su historial se conserva.'))return;
-  try{await deleteDoc(doc(db,'negocios',user.uid,'productos',code));if(currentCode===code)hideCards();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});}
+  try{await deleteDoc(doc(db,'negocios',user.uid,'productos',code));if(currentCode===code)hideCards();if(editCode===code)salirEdicion();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});}
   catch(e){toast({kind:'err',msg:e.message});}}
 $('#inv-search').oninput=renderInv;$('#est-search').oninput=renderEst;
 $('#btn-seed').onclick=async()=>{
@@ -663,6 +772,9 @@ function showProductCard(code){
   const p=prodOf(code);if(!p){showNotFound(code);return;}
   currentCode=code;$('#notfound').classList.remove('show');
   const st=stockOf(code),low=st<=(p.min||0);
+  const icon=$('#pc-icon');
+  if(p.photo){icon.innerHTML=`<img class="pc-photo" src="${p.photo}" alt="">`;icon.style.background='none';}
+  else{icon.innerHTML='📦';icon.style.background='';}
   $('#pc-name').textContent=p.name;
   $('#pc-meta').innerHTML=`<span class="mono">${esc(code)}</span> · ${esc(p.cat||'—')} · ${esc(p.pres||'—')} · mín. ${p.min||0}`;
   $('#pc-stocknum').textContent=st;$('#pc-stock').classList.toggle('low',low);
@@ -854,6 +966,80 @@ $('#btn-export-est-xls').onclick=()=>{
     return [p.name,p.code,s.ent,s.sal,s.mer,st,Number((st*(p.price||0)).toFixed(2))];
   });
   exportXLSX('estadisticas','Estadísticas',headers,rows,[26,16,15,14,14,13,18],[6]);
+};
+
+/* ====== REPORTE PDF DEL INVENTARIO ====== */
+$('#btn-pdf-inv').onclick=()=>{
+  if(!window.jspdf||!window.jspdf.jsPDF){toast({kind:'err',msg:'Librería PDF no disponible. Revisa tu conexión.'});return;}
+  const { jsPDF }=window.jspdf;
+  const docp=new jsPDF({orientation:'portrait',unit:'pt',format:'a4'});
+  const W=docp.internal.pageSize.getWidth();
+  const ahora=new Date();
+  const fecha=ahora.toLocaleDateString('es',{day:'2-digit',month:'long',year:'numeric'});
+  const hora=ahora.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+
+  // Encabezado con marca
+  docp.setFillColor(27,42,74); // teal oscuro --side
+  docp.rect(0,0,W,70,'F');
+  docp.setTextColor(255,255,255);
+  docp.setFont('helvetica','bold');docp.setFontSize(20);
+  docp.text('ControlStock',40,34);
+  docp.setFont('helvetica','normal');docp.setFontSize(11);
+  docp.text('Reporte de Inventario',40,52);
+  docp.setFontSize(9);
+  docp.text(`${fecha} · ${hora}`,W-40,52,{align:'right'});
+  docp.text(user.email||'',W-40,34,{align:'right'});
+
+  // Resumen
+  const totProd=productos.length;
+  const totUnid=productos.reduce((a,p)=>a+stockOf(p.code),0);
+  const totVal=productos.reduce((a,p)=>a+stockOf(p.code)*(p.price||0),0);
+  const bajos=productos.filter(p=>stockOf(p.code)<=(p.min||0)).length;
+  docp.setTextColor(60,60,75);docp.setFontSize(10);
+  let y=96;
+  docp.setFont('helvetica','bold');docp.text('Resumen',40,y);
+  docp.setFont('helvetica','normal');
+  y+=16;
+  docp.text(`Productos: ${totProd}`,40,y);
+  docp.text(`Unidades en stock: ${totUnid}`,180,y);
+  y+=14;
+  docp.text(`Valor del inventario: $${totVal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`,40,y);
+  docp.text(`Productos en stock bajo: ${bajos}`,300,y);
+
+  // Tabla
+  const body=productos.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(p=>{
+    const st=stockOf(p.code);
+    return [p.code,p.name,p.cat||'',String(st),p.pres||'',String(p.min||0),'$'+(p.price||0).toFixed(2)];
+  });
+  docp.autoTable({
+    startY:y+18,
+    head:[['Código','Nombre','Categoría','Cant.','Present.','Mín.','Precio']],
+    body,
+    styles:{fontSize:8,cellPadding:4},
+    headStyles:{fillColor:[109,74,255],textColor:255,fontStyle:'bold'}, // violeta
+    alternateRowStyles:{fillColor:[246,246,251]},
+    columnStyles:{3:{halign:'right'},5:{halign:'right'},6:{halign:'right'}},
+    didParseCell:(d)=>{
+      // resaltar en rojo claro las filas con stock bajo
+      if(d.section==='body'){
+        const p=productos.slice().sort((a,b)=>a.name.localeCompare(b.name))[d.row.index];
+        if(p && stockOf(p.code)<=(p.min||0))d.cell.styles.fillColor=[253,243,243];
+      }
+    },
+    margin:{left:40,right:40}
+  });
+
+  // Pie de página con numeración
+  const pages=docp.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){
+    docp.setPage(i);
+    docp.setFontSize(8);docp.setTextColor(150);
+    docp.text(`ControlStock · Página ${i} de ${pages}`,W/2,docp.internal.pageSize.getHeight()-20,{align:'center'});
+  }
+
+  const p=n=>String(n).padStart(2,'0');
+  docp.save(`inventario_${ahora.getFullYear()}-${p(ahora.getMonth()+1)}-${p(ahora.getDate())}.pdf`);
+  toast({kind:'ok',icon:'⬇',msg:'Reporte PDF generado'});
 };
 </script>
 <script>
