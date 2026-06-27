@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Control de Inventario</title>
+<title>ControlStock</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2f80d6">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Inventario">
+<meta name="apple-mobile-web-app-title" content="ControlStock">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
@@ -210,7 +210,7 @@
 <!-- ===================== LOGIN / REGISTRO ===================== -->
 <div id="auth" style="display:none">
   <div class="authcard">
-    <div class="brand"><span class="dot"></span>Inventario</div>
+    <div class="brand"><span class="dot"></span>ControlStock</div>
     <div class="tagline">Control de existencias en la nube</div>
     <h2 id="auth-title">Iniciar sesión</h2>
     <div class="auth-err" id="auth-err"></div>
@@ -227,13 +227,13 @@
 <div id="app-root">
 <div class="app">
   <aside class="side" id="side">
-    <div class="logo"><span class="dot"></span>Inventario</div>
+    <div class="logo"><span class="dot"></span>ControlStock</div>
     <div class="grp">Almacén</div>
     <nav>
-      <button class="on" data-tab="inventario"><span class="ic">📦</span>Inventario</button>
+      <button class="on" data-tab="dashboard"><span class="ic">📈</span>Dashboard</button>
+      <button data-tab="inventario"><span class="ic">📦</span>Inventario</button>
       <button data-tab="movimientos"><span class="ic">🔄</span>Movimientos</button>
       <button data-tab="estadisticas"><span class="ic">📊</span>Estadísticas</button>
-      <button data-tab="dashboard"><span class="ic">📈</span>Dashboard</button>
     </nav>
     <div class="foot">
       <span class="uemail" id="u-email">—</span>
@@ -247,7 +247,7 @@
     <div class="topbar">
       <div style="display:flex;align-items:center;gap:14px">
         <button class="menu-btn" id="menu-btn">☰</button>
-        <div><h1 id="page-title">Inventario</h1><div class="crumb" id="page-crumb">Almacén · Existencias</div></div>
+        <div><h1 id="page-title">Dashboard</h1><div class="crumb" id="page-crumb">Almacén · Resumen general</div></div>
       </div>
       <button class="btn sm" id="quick-mov">＋ Registrar movimiento</button>
     </div>
@@ -255,7 +255,7 @@
     <div class="content">
 
       <!-- INVENTARIO -->
-      <section class="panel-sec on" id="inventario">
+      <section class="panel-sec" id="inventario">
         <div class="card">
           <h3>Nuevo producto</h3>
           <div class="row4">
@@ -385,7 +385,7 @@
       </section>
 
       <!-- DASHBOARD -->
-      <section class="panel-sec" id="dashboard">
+      <section class="panel-sec on" id="dashboard">
         <div class="kpis">
           <div class="kpi accent"><div class="n" id="k-val">0</div><div class="l">Valor del inventario (USD)</div></div>
           <div class="kpi"><div class="n" id="k-prod">0</div><div class="l">Productos</div></div>

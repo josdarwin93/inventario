@@ -1,6 +1,6 @@
 {
-  "name": "Control de Inventario",
-  "short_name": "Inventario",
+  "name": "ControlStock",
+  "short_name": "ControlStock",
   "description": "Control de existencias: entradas, salidas y mermas con escáner de código de barras.",
   "start_url": "./index.html",
   "scope": "./",
