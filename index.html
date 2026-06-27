@@ -100,7 +100,7 @@
 
   .scanbox{background:var(--side);border-radius:10px;padding:18px;color:#dce6f2;margin-bottom:22px}
   .scanbox h3{color:#fff;font-size:14px;margin-bottom:14px}
-  #video{width:100%;max-height:300px;background:#000;border-radius:8px;display:none;object-fit:cover}
+  #video{width:100%;height:260px;max-height:60vh;background:#000;border-radius:8px;display:none;object-fit:cover}
   .scan-controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
   .hint{font-size:12px;color:#9fb2c9;margin-top:10px}
   .hint.dark{color:var(--tenue)}
@@ -290,12 +290,13 @@
         <div id="mode-scan">
           <div class="scanbox">
             <h3>Escáner de código de barras</h3>
-            <video id="video" playsinline></video>
+            <video id="video" playsinline autoplay muted></video>
             <div class="scan-controls">
               <button class="btn ghost sm" id="btn-scan" style="background:#fff">Iniciar cámara</button>
               <button class="btn ghost sm" id="btn-stop" style="display:none;background:#fff">Detener</button>
               <select id="cam-select" style="display:none;max-width:200px;background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.3)"></select>
             </div>
+            <div class="hint" id="scan-status" style="display:none"></div>
             <div class="hint">Apunta la cámara al código. Cuando el producto exista, aparecerán los botones de Entrada, Salida o Merma.</div>
           </div>
         </div>
@@ -689,30 +690,88 @@ $('#btn-buscar').onclick=buscarManual;
 $('#m-code-manual').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();buscarManual();}});
 $('#mov-search').oninput=renderMov;$('#mov-type').onchange=renderMov;
 
-/* ====== ESCÁNER ====== */
-let reader=null,scanning=false,currentDevice=null,lastScan=0,lastCode='';
-async function initCams(){
-  try{const devices=await navigator.mediaDevices.enumerateDevices();const cams=devices.filter(d=>d.kind==='videoinput');const sel=$('#cam-select');sel.innerHTML='';
-    cams.forEach((c,i)=>{const o=document.createElement('option');o.value=c.deviceId;o.textContent=c.label||('Cámara '+(i+1));sel.appendChild(o);});
-    if(cams.length>1)sel.style.display='inline-block';
-    const back=cams.find(c=>/back|trasera|rear|environment/i.test(c.label));currentDevice=back?back.deviceId:(cams[0]&&cams[0].deviceId);if(currentDevice)sel.value=currentDevice;return cams;
-  }catch(e){return[]}
-}
+/* ====== ESCÁNER (método robusto: abrimos la cámara primero, luego leemos) ====== */
+let reader=null,scanning=false,currentStream=null,lastScan=0,lastCode='',camList=[],camIndex=0;
+function scanStatus(msg){const s=$('#scan-status');if(msg){s.textContent=msg;s.style.display='block';}else s.style.display='none';}
+
 async function startScan(){
-  if(scanning)return;if(!window.ZXing){toast({kind:'err',msg:'Librería de escaneo no disponible'});return;}
-  try{reader=new ZXing.BrowserMultiFormatReader();await navigator.mediaDevices.getUserMedia({video:true});await initCams();
-    $('#video').style.display='block';$('#btn-scan').style.display='none';$('#btn-stop').style.display='inline-flex';scanning=true;
-    reader.decodeFromVideoDevice(currentDevice||undefined,'video',(result)=>{
-      if(!result)return;const now=Date.now(),code=result.getText();
+  if(scanning)return;
+  if(!window.ZXing){toast({kind:'err',msg:'Librería de escaneo no disponible'});return;}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    toast({kind:'err',title:'Cámara no disponible',msg:'Tu navegador no permite cámara aquí. Usa Chrome y abre la página con https.',long:true});return;
+  }
+  scanning=true;
+  $('#btn-scan').style.display='none';$('#btn-stop').style.display='inline-flex';
+  scanStatus('Abriendo cámara…');
+  try{
+    // 1) Pedimos la cámara trasera directamente con facingMode (lo más compatible)
+    let constraints;
+    if(camList.length && camList[camIndex]){
+      constraints={video:{deviceId:{exact:camList[camIndex].deviceId}}};
+    }else{
+      constraints={video:{facingMode:{ideal:'environment'}}};
+    }
+    let stream;
+    try{
+      stream=await navigator.mediaDevices.getUserMedia(constraints);
+    }catch(e1){
+      // si falla con la cámara específica, intentamos con cualquiera
+      stream=await navigator.mediaDevices.getUserMedia({video:true});
+    }
+    currentStream=stream;
+
+    // 2) Conectamos el stream al video y forzamos su reproducción
+    const video=$('#video');
+    video.srcObject=stream;
+    video.setAttribute('playsinline','');video.muted=true;
+    video.style.display='block';
+    try{await video.play();}catch(ePlay){/* algunos navegadores reproducen solos */}
+
+    // 3) Llenamos la lista de cámaras (ahora sí tenemos permiso y etiquetas)
+    if(!camList.length){
+      const devices=await navigator.mediaDevices.enumerateDevices();
+      camList=devices.filter(d=>d.kind==='videoinput');
+      const sel=$('#cam-select');sel.innerHTML='';
+      camList.forEach((c,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=c.label||('Cámara '+(i+1));sel.appendChild(o);});
+      // preferimos la trasera
+      const backIdx=camList.findIndex(c=>/back|trasera|rear|environment/i.test(c.label));
+      camIndex=backIdx>=0?backIdx:0;sel.value=String(camIndex);
+      if(camList.length>1)sel.style.display='inline-block';
+    }
+
+    scanStatus('Cámara activa. Apunta al código de barras.');
+
+    // 4) Ahora sí, le pasamos el stream YA ABIERTO a la librería para que lea
+    reader=new ZXing.BrowserMultiFormatReader();
+    reader.decodeFromStream(stream,video,(result)=>{
+      if(!result)return;
+      const now=Date.now(),code=result.getText();
       if(code===lastCode&&now-lastScan<2000)return;lastScan=now;lastCode=code;
       if(navigator.vibrate)navigator.vibrate(110);
-      showProductCard(code);if(!prodOf(code))toast({kind:'warn',title:'Código no registrado',msg:code});
+      scanStatus('✓ Código leído: '+code);
+      showProductCard(code);
+      if(!prodOf(code))toast({kind:'warn',title:'Código no registrado',msg:code});
     });
-  }catch(e){toast({kind:'err',title:'Cámara no disponible',msg:'Revisa los permisos del navegador',long:true});scanning=false;$('#btn-scan').style.display='inline-flex';$('#btn-stop').style.display='none';}
+  }catch(e){
+    scanning=false;
+    $('#btn-scan').style.display='inline-flex';$('#btn-stop').style.display='none';
+    scanStatus('');
+    let msg='Revisa los permisos de cámara del navegador.';
+    if(e&&e.name==='NotAllowedError')msg='Bloqueaste el permiso de cámara. Tócalo en el candado de la barra de direcciones y ponlo en Permitir.';
+    if(e&&e.name==='NotFoundError')msg='No se encontró ninguna cámara en el dispositivo.';
+    if(e&&e.name==='NotReadableError')msg='Otra app está usando la cámara. Ciérrala e intenta de nuevo.';
+    toast({kind:'err',title:'No se pudo abrir la cámara',msg,long:true});
+  }
 }
-function stopScan(){if(reader){try{reader.reset()}catch(e){}}scanning=false;$('#video').style.display='none';$('#btn-scan').style.display='inline-flex';$('#btn-stop').style.display='none';}
+function stopScan(){
+  if(reader){try{reader.reset()}catch(e){}}
+  if(currentStream){try{currentStream.getTracks().forEach(t=>t.stop())}catch(e){}currentStream=null;}
+  const video=$('#video');try{video.pause();video.srcObject=null;}catch(e){}
+  scanning=false;video.style.display='none';scanStatus('');
+  $('#btn-scan').style.display='inline-flex';$('#btn-stop').style.display='none';
+}
 $('#btn-scan').onclick=startScan;$('#btn-stop').onclick=stopScan;
-$('#cam-select').onchange=()=>{currentDevice=$('#cam-select').value;if(scanning){stopScan();startScan();}};
+$('#cam-select').onchange=()=>{camIndex=parseInt($('#cam-select').value)||0;if(scanning){stopScan();setTimeout(startScan,200);}};
 
 /* ====== EXPORTAR CSV ====== */
 function downloadCSV(fn,rows){const csv=rows.map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(',')).join('\n');
