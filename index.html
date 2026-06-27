@@ -2,8 +2,16 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Control de Inventario</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f80d6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Inventario">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <style>
   :root{
@@ -783,6 +791,14 @@ $('#btn-export-mov').onclick=()=>{const r=[['Fecha','Hora','Codigo','Nombre','Ti
     r.push([dPart(m.ts),hPart(m.ts),m.code,nameOf(m.code),typeName[m.type],m.qty,m.user||'',running[m.code],m.reason||'']);});downloadCSV('movimientos.csv',r);};
 $('#btn-export-est').onclick=()=>{const r=[['Producto','Codigo','Total Entradas','Total Salidas','Total Mermas','Stock Actual','Valor Inventario']];
   productos.forEach(p=>{const s=statsOf(p.code),st=stockOf(p.code);r.push([p.name,p.code,s.ent,s.sal,s.mer,st,(st*(p.price||0)).toFixed(2)]);});downloadCSV('estadisticas.csv',r);};
+</script>
+<script>
+/* Registro del Service Worker para que la app sea instalable (PWA) */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.log('SW no registrado:', err));
+  });
+}
 </script>
 </body>
 </html>
