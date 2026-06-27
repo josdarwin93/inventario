@@ -13,6 +13,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root{
     --side:#1f3a5f; --side2:#16304f; --side-hover:#2b4d77;
@@ -278,7 +279,8 @@
           <input id="inv-search" placeholder="Buscar por nombre o código…">
           <div class="spacer"></div>
           <button class="btn ghost sm" id="btn-seed">Cargar datos demo</button>
-          <button class="btn ghost sm" id="btn-export-inv">Exportar CSV</button>
+          <button class="btn ghost sm" id="btn-export-inv-xls">⬇ Excel</button>
+          <button class="btn ghost sm" id="btn-export-inv">CSV</button>
         </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-inv">
@@ -352,7 +354,8 @@
           <input id="mov-search" placeholder="Buscar producto o código…">
           <select id="mov-type"><option value="">Todos los tipos</option><option value="in">Entradas</option><option value="out">Salidas</option><option value="merma">Mermas</option></select>
           <div class="spacer"></div>
-          <button class="btn ghost sm" id="btn-export-mov">Exportar CSV</button>
+          <button class="btn ghost sm" id="btn-export-mov-xls">⬇ Excel</button>
+          <button class="btn ghost sm" id="btn-export-mov">CSV</button>
         </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-mov">
@@ -369,7 +372,8 @@
         <div class="filterbar">
           <input id="est-search" placeholder="Buscar producto o código…">
           <div class="spacer"></div>
-          <button class="btn ghost sm" id="btn-export-est">Exportar CSV</button>
+          <button class="btn ghost sm" id="btn-export-est-xls">⬇ Excel</button>
+          <button class="btn ghost sm" id="btn-export-est">CSV</button>
         </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-est">
@@ -791,6 +795,57 @@ $('#btn-export-mov').onclick=()=>{const r=[['Fecha','Hora','Codigo','Nombre','Ti
     r.push([dPart(m.ts),hPart(m.ts),m.code,nameOf(m.code),typeName[m.type],m.qty,m.user||'',running[m.code],m.reason||'']);});downloadCSV('movimientos.csv',r);};
 $('#btn-export-est').onclick=()=>{const r=[['Producto','Codigo','Total Entradas','Total Salidas','Total Mermas','Stock Actual','Valor Inventario']];
   productos.forEach(p=>{const s=statsOf(p.code),st=stockOf(p.code);r.push([p.name,p.code,s.ent,s.sal,s.mer,st,(st*(p.price||0)).toFixed(2)]);});downloadCSV('estadisticas.csv',r);};
+
+/* ====== EXPORTAR EXCEL (.xlsx con formato) ====== */
+function nombreArchivo(base){
+  const d=new Date();const p=n=>String(n).padStart(2,'0');
+  return `${base}_${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}.xlsx`;
+}
+// Aplica estilos básicos: encabezado azul en negrita y ancho de columnas
+function estilizar(ws,nCols,anchos){
+  if(anchos)ws['!cols']=anchos.map(w=>({wch:w}));
+  // SheetJS community no aplica color de relleno sin pro, pero sí negrita en encabezado vía celdas
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  for(let c=0;c<=range.e.c;c++){
+    const ref=XLSX.utils.encode_cell({r:0,c});
+    if(ws[ref]){ws[ref].s={font:{bold:true}};}
+  }
+}
+function exportXLSX(filenameBase,sheetName,headers,rows,anchos){
+  if(!window.XLSX){toast({kind:'err',msg:'Librería Excel no disponible. Revisa tu conexión.'});return;}
+  const data=[headers,...rows];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  estilizar(ws,headers.length,anchos);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,sheetName);
+  XLSX.writeFile(wb,nombreArchivo(filenameBase));
+  toast({kind:'ok',icon:'⬇',msg:'Excel exportado'});
+}
+
+$('#btn-export-inv-xls').onclick=()=>{
+  const headers=['Código','Nombre','Categoría','Cantidad','Presentación','Stock Mínimo','Precio','Última Actualización'];
+  const rows=productos.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(p=>{
+    const lu=lastUpdate(p.code);
+    return [p.code,p.name,p.cat||'',stockOf(p.code),p.pres||'',p.min||0,Number((p.price||0).toFixed(2)),lu?dPart(lu):''];
+  });
+  exportXLSX('inventario','Inventario',headers,rows,[16,26,16,10,14,12,10,18]);
+};
+$('#btn-export-mov-xls').onclick=()=>{
+  const headers=['Fecha','Hora','Código','Nombre','Tipo','Cantidad','Usuario','Stock Resultante','Motivo'];
+  const running={};const rows=[];
+  movimientos.forEach(m=>{const base=(prodOf(m.code)||{}).initial||0;if(running[m.code]===undefined)running[m.code]=base;running[m.code]+=(m.type==='in'?m.qty:-m.qty);
+    rows.push([dPart(m.ts),hPart(m.ts),m.code,nameOf(m.code),typeName[m.type],m.qty,m.user||'',running[m.code],m.reason||'']);});
+  rows.reverse();
+  exportXLSX('movimientos','Movimientos',headers,rows,[12,8,16,26,10,10,16,16,24]);
+};
+$('#btn-export-est-xls').onclick=()=>{
+  const headers=['Producto','Código','Total Entradas','Total Salidas','Total Mermas','Stock Actual','Valor Inventario'];
+  const rows=productos.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(p=>{
+    const s=statsOf(p.code),st=stockOf(p.code);
+    return [p.name,p.code,s.ent,s.sal,s.mer,st,Number((st*(p.price||0)).toFixed(2))];
+  });
+  exportXLSX('estadisticas','Estadísticas',headers,rows,[26,16,15,14,14,13,16]);
+};
 </script>
 <script>
 /* Registro del Service Worker para que la app sea instalable (PWA) */
