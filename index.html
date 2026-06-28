@@ -16,6 +16,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <style>
   :root{
     --side:#1b2a4a; --side2:#13203a; --side-hover:#33406b;
@@ -195,6 +196,18 @@
   .photo-menu{margin-top:8px;width:120px;display:flex;flex-direction:column;gap:5px}
   .photo-menu button{font-family:inherit;font-size:12.5px;font-weight:600;text-align:left;padding:9px 11px;border:1px solid var(--linea2);border-radius:7px;background:#fff;color:var(--tinta);cursor:pointer}
   .photo-menu button:hover{background:var(--azul-bg);border-color:var(--azul)}
+
+  /* modal código de barras */
+  .bc-overlay{display:none;position:fixed;inset:0;background:rgba(20,30,50,.55);z-index:250;align-items:center;justify-content:center;padding:20px}
+  .bc-overlay.show{display:flex}
+  .bc-modal{background:#fff;border-radius:14px;padding:24px;max-width:420px;width:100%;position:relative;box-shadow:0 18px 50px rgba(20,40,70,.3);animation:pop .2s}
+  .bc-modal h3{font-size:16px;font-weight:700;margin-bottom:18px;padding-right:24px}
+  .bc-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--tenue)}
+  .bc-close:hover{color:var(--tinta)}
+  .bc-canvas-wrap{background:#fff;border:1px solid var(--linea);border-radius:8px;padding:16px;text-align:center;overflow:auto}
+  .bc-canvas-wrap svg{max-width:100%;height:auto}
+  .bc-actions{display:flex;gap:10px;margin-top:18px}
+  .bc-actions .btn{flex:1}
   @media(max-width:860px){
     .side{position:fixed;left:-220px;z-index:50;transition:.25s;box-shadow:4px 0 24px rgba(0,0,0,.2)}
     .side.open{left:0}.menu-btn{display:block}
@@ -291,7 +304,12 @@
             </div>
             <div style="flex:1;min-width:260px">
               <div class="row">
-                <div class="field"><label>Código (cód. barra)</label><input id="p-code" placeholder="Escanea o escribe"></div>
+                <div class="field"><label>Código (cód. barra)</label>
+                  <div style="display:flex;gap:6px">
+                    <input id="p-code" placeholder="Escanea, escribe o genera" style="flex:1">
+                    <button class="btn ghost sm" id="btn-gencode" type="button" title="Generar código único" style="white-space:nowrap">⚡ Generar</button>
+                  </div>
+                </div>
                 <div class="field"><label>Nombre</label><input id="p-name" placeholder="Ej: Lápiz HB"></div>
               </div>
               <div class="row">
@@ -454,6 +472,22 @@
 </div>
 </div>
 <div class="toasts" id="toasts"></div>
+
+<!-- Modal de código de barras -->
+<div class="bc-overlay" id="bc-overlay">
+  <div class="bc-modal">
+    <button class="bc-close" id="bc-close">✕</button>
+    <h3 id="bc-title">Código de barras</h3>
+    <div class="bc-canvas-wrap">
+      <svg id="bc-svg"></svg>
+    </div>
+    <div class="bc-actions">
+      <button class="btn" id="bc-print">🖨 Imprimir</button>
+      <button class="btn ghost" id="bc-download">⬇ Descargar imagen</button>
+    </div>
+    <div class="hint dark" style="text-align:center;margin-top:10px">Imprime y pega la etiqueta en el producto. Luego podrás escanearla con la app.</div>
+  </div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
@@ -624,9 +658,10 @@ function renderInv(){
     const thumb=p.photo?`<img class="inv-thumb" src="${p.photo}" alt="">`:`<div class="inv-thumb-ph">📦</div>`;
     tb.insertAdjacentHTML('beforeend',`<tr class="${low?'rowlow':''}"><td>${thumb}</td><td class="mono">${esc(p.code)}</td><td>${esc(p.name)}</td><td>${esc(p.cat||'—')}</td>
       <td class="r qty-strong">${st}${low?' <span class="tag low">bajo</span>':''}</td><td>${esc(p.pres||'—')}</td><td class="r">${p.min||0}</td><td class="r">${money(p.price||0)}</td>
-      <td>${lu?dPart(lu):'—'}</td><td class="r" style="white-space:nowrap"><button class="btn ghost sm" data-edit="${esc(p.code)}">Editar</button> <button class="btn danger sm" data-del="${esc(p.code)}">Eliminar</button></td></tr>`);});
+      <td>${lu?dPart(lu):'—'}</td><td class="r" style="white-space:nowrap"><button class="btn ghost sm" data-bc="${esc(p.code)}">Código</button> <button class="btn ghost sm" data-edit="${esc(p.code)}">Editar</button> <button class="btn danger sm" data-del="${esc(p.code)}">Eliminar</button></td></tr>`);});
   tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>delProd(b.dataset.del));
   tb.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editProd(b.dataset.edit));
+  tb.querySelectorAll('[data-bc]').forEach(b=>b.onclick=()=>mostrarCodigoBarras(b.dataset.bc));
 }
 function renderMov(){
   const q=($('#mov-search').value||'').toLowerCase(),tf=$('#mov-type').value;
@@ -776,6 +811,77 @@ async function delProd(code){const p=prodOf(code);if(!confirm('¿Eliminar "'+(p?
   try{await deleteDoc(doc(db,'negocios',user.uid,'productos',code));if(currentCode===code)hideCards();if(editCode===code)salirEdicion();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});}
   catch(e){toast({kind:'err',msg:e.message});}}
 $('#inv-search').oninput=renderInv;$('#est-search').oninput=renderEst;
+
+/* ====== GENERAR CÓDIGO ÚNICO (para productos sin código de fábrica) ====== */
+$('#btn-gencode').onclick=()=>{
+  if(editCode){toast({kind:'info',msg:'El código no se cambia al editar un producto'});return;}
+  let code,intentos=0;
+  do{
+    // formato: CS + año(2) + mes(2) + día(2) + 4 dígitos aleatorios  → único y legible
+    const d=new Date();const p=n=>String(n).padStart(2,'0');
+    const rnd=Math.floor(1000+Math.random()*9000);
+    code='CS'+String(d.getFullYear()).slice(2)+p(d.getMonth()+1)+p(d.getDate())+rnd;
+    intentos++;
+  }while(prodOf(code)&&intentos<20);
+  $('#p-code').value=code;
+  $('#p-name').focus();
+  toast({kind:'ok',icon:'⚡',msg:'Código generado: '+code});
+};
+let bcActual={code:'',name:''};
+function mostrarCodigoBarras(code){
+  const p=prodOf(code);if(!p)return;
+  if(!window.JsBarcode){toast({kind:'err',msg:'Librería de códigos no disponible. Revisa tu conexión.'});return;}
+  bcActual={code,name:p.name};
+  $('#bc-title').textContent=p.name;
+  try{
+    JsBarcode('#bc-svg',code,{format:'CODE128',width:2,height:80,fontSize:16,margin:10,displayValue:true});
+    // añadimos el nombre del producto encima como texto en el SVG no es trivial; lo dejamos en el título
+    $('#bc-overlay').classList.add('show');
+  }catch(e){
+    toast({kind:'err',title:'No se pudo generar',msg:'El código tiene caracteres no válidos',long:true});
+  }
+}
+$('#bc-close').onclick=()=>$('#bc-overlay').classList.remove('show');
+$('#bc-overlay').onclick=(e)=>{if(e.target===$('#bc-overlay'))$('#bc-overlay').classList.remove('show');};
+
+// descargar como imagen PNG
+$('#bc-download').onclick=()=>{
+  const svg=$('#bc-svg');
+  const xml=new XMLSerializer().serializeToString(svg);
+  const svg64=btoa(unescape(encodeURIComponent(xml)));
+  const img=new Image();
+  img.onload=()=>{
+    const pad=20;
+    const cv=document.createElement('canvas');
+    cv.width=img.width+pad*2;cv.height=img.height+pad*2+30;
+    const ctx=cv.getContext('2d');
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);
+    // nombre del producto arriba
+    ctx.fillStyle='#000';ctx.font='bold 16px sans-serif';ctx.textAlign='center';
+    ctx.fillText(bcActual.name,cv.width/2,24);
+    ctx.drawImage(img,pad,pad+24);
+    cv.toBlob(blob=>{
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      a.download='codigo_'+bcActual.code+'.png';a.click();
+      toast({kind:'ok',icon:'⬇',msg:'Imagen descargada'});
+    });
+  };
+  img.src='data:image/svg+xml;base64,'+svg64;
+};
+
+// imprimir
+$('#bc-print').onclick=()=>{
+  const xml=new XMLSerializer().serializeToString($('#bc-svg'));
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><title>${esc(bcActual.name)}</title></head>
+    <body style="text-align:center;font-family:sans-serif;padding:30px">
+    <div style="font-weight:bold;font-size:18px;margin-bottom:10px">${esc(bcActual.name)}</div>
+    ${xml}
+    <script>window.onload=function(){window.print();}<\/script>
+    </body></html>`);
+  w.document.close();
+};
+
 $('#btn-seed').onclick=async()=>{
   if(!confirm('Carga 12 productos de demostración en tu cuenta. ¿Continuar?'))return;
   try{const batch=writeBatch(db);DEMO.forEach(d=>{const {code,...rest}=d;batch.set(doc(db,'negocios',user.uid,'productos',code),{...rest,created:serverTimestamp()});});await batch.commit();toast({kind:'ok',msg:'Datos demo cargados'});}
