@@ -278,13 +278,8 @@
                 <img id="photo-preview" alt="">
                 <span id="photo-placeholder">📷<br>Tomar o<br>elegir foto</span>
               </div>
-              <input id="p-photo-cam" type="file" accept="image/*" capture="environment" style="display:none">
               <input id="p-photo-gal" type="file" accept="image/*" style="display:none">
-              <div style="display:flex;gap:6px;margin-top:8px">
-                <button class="btn ghost sm" id="btn-photo-cam" style="flex:1">📷 Cámara</button>
-                <button class="btn ghost sm" id="btn-photo-gal" style="flex:1">🖼 Galería</button>
-              </div>
-              <button class="btn ghost sm" id="btn-photo-remove" style="display:none;margin-top:6px;width:100%">Quitar foto</button>
+              <button class="btn ghost sm" id="btn-photo-remove" style="display:none;margin-top:8px;width:100%">Quitar foto</button>
             </div>
             <div style="flex:1;min-width:260px">
               <div class="row">
@@ -692,18 +687,15 @@ function procesarArchivoFoto(file){
   };
   reader.readAsDataURL(file);
 }
-// botones: cámara abre la cámara directamente; galería abre el selector de archivos
-$('#btn-photo-cam').onclick=()=>$('#p-photo-cam').click();
-$('#btn-photo-gal').onclick=()=>$('#p-photo-gal').click();
+// el recuadro abre el selector del teléfono (que ofrece cámara o galería)
 $('#photo-drop').onclick=()=>$('#p-photo-gal').click();
-$('#p-photo-cam').onchange=e=>procesarArchivoFoto(e.target.files[0]);
 $('#p-photo-gal').onchange=e=>procesarArchivoFoto(e.target.files[0]);
 function mostrarFoto(data){
   const drop=$('#photo-drop'),img=$('#photo-preview');
   if(data){img.src=data;drop.classList.add('has');$('#btn-photo-remove').style.display='block';}
   else{img.src='';drop.classList.remove('has');$('#btn-photo-remove').style.display='none';}
 }
-$('#btn-photo-remove').onclick=()=>{photoData='';$('#p-photo-cam').value='';$('#p-photo-gal').value='';mostrarFoto('');};
+$('#btn-photo-remove').onclick=()=>{photoData='';$('#p-photo-gal').value='';mostrarFoto('');};
 
 /* --- guardar (crea o edita según el modo) --- */
 $('#btn-addprod').onclick=async()=>{
@@ -734,7 +726,7 @@ $('#btn-addprod').onclick=async()=>{
     toast({kind:'err',title:'No se pudo guardar',msg:m,long:true});
   }
 };
-function clearProdForm(){['p-code','p-name','p-cat','p-pres'].forEach(i=>$('#'+i).value='');$('#p-stock').value=0;$('#p-min').value=5;$('#p-price').value='0.00';photoData='';$('#p-photo-cam').value='';$('#p-photo-gal').value='';mostrarFoto('');}
+function clearProdForm(){['p-code','p-name','p-cat','p-pres'].forEach(i=>$('#'+i).value='');$('#p-stock').value=0;$('#p-min').value=5;$('#p-price').value='0.00';photoData='';$('#p-photo-gal').value='';mostrarFoto('');}
 $('#btn-clearprod').onclick=()=>{if(editCode)salirEdicion();else clearProdForm();};
 
 /* --- entrar / salir del modo edición --- */
