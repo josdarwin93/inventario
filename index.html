@@ -192,6 +192,9 @@
   .inv-thumb{width:38px;height:38px;border-radius:7px;object-fit:cover;background:var(--bg);border:1px solid var(--linea);display:block}
   .inv-thumb-ph{width:38px;height:38px;border-radius:7px;background:var(--bg);border:1px solid var(--linea);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--linea2)}
   .pc-photo{width:54px;height:54px;border-radius:11px;object-fit:cover;flex-shrink:0}
+  .photo-menu{margin-top:8px;width:120px;display:flex;flex-direction:column;gap:5px}
+  .photo-menu button{font-family:inherit;font-size:12.5px;font-weight:600;text-align:left;padding:9px 11px;border:1px solid var(--linea2);border-radius:7px;background:#fff;color:var(--tinta);cursor:pointer}
+  .photo-menu button:hover{background:var(--azul-bg);border-color:var(--azul)}
   @media(max-width:860px){
     .side{position:fixed;left:-220px;z-index:50;transition:.25s;box-shadow:4px 0 24px rgba(0,0,0,.2)}
     .side.open{left:0}.menu-btn{display:block}
@@ -278,7 +281,12 @@
                 <img id="photo-preview" alt="">
                 <span id="photo-placeholder">📷<br>Tomar o<br>elegir foto</span>
               </div>
+              <input id="p-photo-cam" type="file" accept="image/*" capture="environment" style="display:none">
               <input id="p-photo-gal" type="file" accept="image/*" style="display:none">
+              <div id="photo-menu" class="photo-menu" style="display:none">
+                <button type="button" id="opt-cam">📷 Tomar foto</button>
+                <button type="button" id="opt-gal">🖼 Elegir de galería</button>
+              </div>
               <button class="btn ghost sm" id="btn-photo-remove" style="display:none;margin-top:8px;width:100%">Quitar foto</button>
             </div>
             <div style="flex:1;min-width:260px">
@@ -687,15 +695,21 @@ function procesarArchivoFoto(file){
   };
   reader.readAsDataURL(file);
 }
-// el recuadro abre el selector del teléfono (que ofrece cámara o galería)
-$('#photo-drop').onclick=()=>$('#p-photo-gal').click();
+// al tocar el recuadro se muestra un mini-menú con las dos opciones
+$('#photo-drop').onclick=()=>{
+  const m=$('#photo-menu');
+  m.style.display=(m.style.display==='none'||!m.style.display)?'flex':'none';
+};
+$('#opt-cam').onclick=()=>{$('#photo-menu').style.display='none';$('#p-photo-cam').click();};
+$('#opt-gal').onclick=()=>{$('#photo-menu').style.display='none';$('#p-photo-gal').click();};
+$('#p-photo-cam').onchange=e=>procesarArchivoFoto(e.target.files[0]);
 $('#p-photo-gal').onchange=e=>procesarArchivoFoto(e.target.files[0]);
 function mostrarFoto(data){
   const drop=$('#photo-drop'),img=$('#photo-preview');
   if(data){img.src=data;drop.classList.add('has');$('#btn-photo-remove').style.display='block';}
   else{img.src='';drop.classList.remove('has');$('#btn-photo-remove').style.display='none';}
 }
-$('#btn-photo-remove').onclick=()=>{photoData='';$('#p-photo-gal').value='';mostrarFoto('');};
+$('#btn-photo-remove').onclick=()=>{photoData='';$('#p-photo-cam').value='';$('#p-photo-gal').value='';mostrarFoto('');};
 
 /* --- guardar (crea o edita según el modo) --- */
 $('#btn-addprod').onclick=async()=>{
@@ -726,7 +740,7 @@ $('#btn-addprod').onclick=async()=>{
     toast({kind:'err',title:'No se pudo guardar',msg:m,long:true});
   }
 };
-function clearProdForm(){['p-code','p-name','p-cat','p-pres'].forEach(i=>$('#'+i).value='');$('#p-stock').value=0;$('#p-min').value=5;$('#p-price').value='0.00';photoData='';$('#p-photo-gal').value='';mostrarFoto('');}
+function clearProdForm(){['p-code','p-name','p-cat','p-pres'].forEach(i=>$('#'+i).value='');$('#p-stock').value=0;$('#p-min').value=5;$('#p-price').value='0.00';photoData='';$('#p-photo-cam').value='';$('#p-photo-gal').value='';$('#photo-menu').style.display='none';mostrarFoto('');}
 $('#btn-clearprod').onclick=()=>{if(editCode)salirEdicion();else clearProdForm();};
 
 /* --- entrar / salir del modo edición --- */
