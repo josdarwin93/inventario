@@ -913,10 +913,11 @@ async function registrarDesdeCard(type){
   if(!p){toast({kind:'err',msg:'No hay producto seleccionado'});return;}
   const qty=parseInt($('#pc-qty').value);
   if(!qty||qty<1){toast({kind:'err',msg:'La cantidad debe ser 1 o más'});return;}
-  if(type!=='in'&&qty>stockOf(code)){toast({kind:'err',title:'Stock insuficiente',msg:`${p.name}: disponible ${stockOf(code)}, intentas sacar ${qty}`,long:true});return;}
+  const stockAntes=stockOf(code);
+  if(type!=='in'&&qty>stockAntes){toast({kind:'err',title:'Stock insuficiente',msg:`${p.name}: disponible ${stockAntes}, intentas sacar ${qty}`,long:true});return;}
   try{
     await addDoc(movCol(),{code,type,qty,user:$('#pc-user').value.trim(),reason:$('#pc-reason').value.trim(),ts:serverTimestamp()});
-    const nuevoStock=stockOf(code)+(type==='in'?qty:-qty);
+    const nuevoStock=stockAntes+(type==='in'?qty:-qty);
     const verbo={in:'Entrada registrada',out:'Salida registrada',merma:'Merma registrada'}[type];
     toast({kind:'ok',title:verbo,msg:`${p.name} · ${type==='in'?'+':'−'}${qty} · stock ahora: ${nuevoStock}`});
     if(nuevoStock<=(p.min||0))toast({kind:'warn',title:'⚠ Stock bajo',msg:`${p.name} quedó en ${nuevoStock} (mínimo ${p.min||0}). Conviene reponer.`,long:true});
