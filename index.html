@@ -335,7 +335,6 @@
           <select id="inv-cat"><option value="">Todas las categorías</option></select>
           <div class="spacer"></div>
           <button class="btn ghost sm" id="btn-pdf-inv">⬇ PDF</button>
-          <button class="btn ghost sm" id="btn-seed">Cargar datos demo</button>
           <button class="btn ghost sm" id="btn-export-inv-xls">⬇ Excel</button>
           <button class="btn ghost sm" id="btn-export-inv">CSV</button>
         </div>
@@ -344,7 +343,7 @@
             <thead><tr><th></th><th>Código</th><th>Nombre</th><th>Categoría</th><th class="r">Cantidad</th><th>Presentación</th><th class="r">Stock Mínimo</th><th class="r">Precio (USD)</th><th>Última Actualización</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
-          <div class="empty" id="empty-inv"><div class="big">Hoja vacía</div>Agrega productos o carga los datos demo.</div>
+          <div class="empty" id="empty-inv"><div class="big">Hoja vacía</div>Agrega tu primer producto con el formulario de arriba.</div>
         </div></div>
       </section>
 
@@ -509,22 +508,6 @@ const firebaseConfig = {
 const fbApp=initializeApp(firebaseConfig);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
-
-/* ====== DATOS DEMO ====== */
-const DEMO=[
-  {code:'7591234500013',name:'Lápiz HB',cat:'Papelería',pres:'Unidad',initial:50,min:10,price:0.50},
-  {code:'7591234500020',name:'Cuaderno 100 hojas',cat:'Papelería',pres:'Unidad',initial:30,min:8,price:2.50},
-  {code:'7591234500037',name:'Marcador negro',cat:'Papelería',pres:'Unidad',initial:100,min:5,price:1.20},
-  {code:'7591234500044',name:'Resma papel carta',cat:'Papelería',pres:'Caja',initial:8,min:3,price:5.00},
-  {code:'7591234500051',name:'Tijera escolar',cat:'Papelería',pres:'Unidad',initial:20,min:6,price:1.80},
-  {code:'7591234500068',name:'Engrapadora metálica',cat:'Oficina',pres:'Unidad',initial:12,min:4,price:6.75},
-  {code:'7591234500075',name:'Caja de clips',cat:'Oficina',pres:'Caja',initial:45,min:10,price:0.90},
-  {code:'7591234500082',name:'Cinta adhesiva',cat:'Oficina',pres:'Unidad',initial:60,min:15,price:1.10},
-  {code:'7591234500099',name:'Carpeta tipo sobre',cat:'Archivo',pres:'Unidad',initial:3,min:12,price:0.65},
-  {code:'7591234500105',name:'Resaltador amarillo',cat:'Papelería',pres:'Unidad',initial:25,min:8,price:1.35},
-  {code:'7591234500112',name:'Borrador de goma',cat:'Papelería',pres:'Unidad',initial:80,min:20,price:0.30},
-  {code:'7591234500129',name:'Calculadora básica',cat:'Oficina',pres:'Unidad',initial:6,min:5,price:8.40}
-];
 
 /* ====== ESTADO ====== */
 let user=null, productos=[], movimientos=[];
@@ -895,12 +878,6 @@ $('#bc-print').onclick=()=>{
     <script>window.onload=function(){window.print();}<\/script>
     </body></html>`);
   w.document.close();
-};
-
-$('#btn-seed').onclick=async()=>{
-  if(!confirm('Carga 12 productos de demostración en tu cuenta. ¿Continuar?'))return;
-  try{const batch=writeBatch(db);DEMO.forEach(d=>{const {code,...rest}=d;batch.set(doc(db,'negocios',user.uid,'productos',code),{...rest,created:serverTimestamp()});});await batch.commit();toast({kind:'ok',msg:'Datos demo cargados'});}
-  catch(e){toast({kind:'err',msg:e.message});}
 };
 
 /* ====== TARJETA DE PRODUCTO + ACCIONES ====== */
