@@ -332,6 +332,7 @@
         <div class="sec-title">Hoja de inventario</div>
         <div class="filterbar">
           <input id="inv-search" placeholder="Buscar por nombre o código…">
+          <select id="inv-cat"><option value="">Todas las categorías</option></select>
           <div class="spacer"></div>
           <button class="btn ghost sm" id="btn-pdf-inv">⬇ PDF</button>
           <button class="btn ghost sm" id="btn-seed">Cargar datos demo</button>
@@ -651,8 +652,22 @@ function render(){
 }
 function renderInv(){
   const q=($('#inv-search').value||'').toLowerCase();
+  const catSel=$('#inv-cat').value;
+  // rellenar el desplegable de categorías (conservando la selección actual)
+  const cats=[...new Set(productos.map(p=>(p.cat||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const selCat=$('#inv-cat');
+  if(selCat.dataset.cats!==cats.join('|')){
+    selCat.dataset.cats=cats.join('|');
+    const prev=selCat.value;
+    selCat.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    if(cats.includes(prev))selCat.value=prev;
+  }
   const tb=$('#tbl-inv tbody');tb.innerHTML='';
-  const list=productos.filter(p=>p.name.toLowerCase().includes(q)||p.code.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
+  const list=productos.filter(p=>{
+    const okText=p.name.toLowerCase().includes(q)||p.code.toLowerCase().includes(q);
+    const okCat=!catSel||(p.cat||'').trim()===catSel;
+    return okText&&okCat;
+  }).sort((a,b)=>a.name.localeCompare(b.name));
   $('#empty-inv').style.display=productos.length?'none':'block';
   list.forEach(p=>{const st=stockOf(p.code),low=st<=(p.min||0),lu=lastUpdate(p.code);
     const thumb=p.photo?`<img class="inv-thumb" src="${p.photo}" alt="">`:`<div class="inv-thumb-ph">📦</div>`;
@@ -810,7 +825,7 @@ $('#btn-canceledit').onclick=salirEdicion;
 async function delProd(code){const p=prodOf(code);if(!confirm('¿Eliminar "'+(p?p.name:code)+'"? Su historial se conserva.'))return;
   try{await deleteDoc(doc(db,'negocios',user.uid,'productos',code));if(currentCode===code)hideCards();if(editCode===code)salirEdicion();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});}
   catch(e){toast({kind:'err',msg:e.message});}}
-$('#inv-search').oninput=renderInv;$('#est-search').oninput=renderEst;
+$('#inv-search').oninput=renderInv;$('#inv-cat').onchange=renderInv;$('#est-search').oninput=renderEst;
 
 /* ====== GENERAR CÓDIGO ÚNICO (para productos sin código de fábrica) ====== */
 $('#btn-gencode').onclick=()=>{
