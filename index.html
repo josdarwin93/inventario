@@ -410,13 +410,14 @@
           <input id="mov-search" placeholder="Buscar producto o código…">
           <select id="mov-type"><option value="">Todos los tipos</option><option value="in">Entradas</option><option value="out">Salidas</option><option value="merma">Mermas</option></select>
           <div class="spacer"></div>
+          <button class="btn danger sm" id="btn-clear-mov">🗑 Eliminar todo</button>
           <button class="btn ghost sm" id="btn-pdf-mov">⬇ PDF</button>
           <button class="btn ghost sm" id="btn-export-mov-xls">⬇ Excel</button>
           <button class="btn ghost sm" id="btn-export-mov">CSV</button>
         </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-mov">
-            <thead><tr><th>Fecha</th><th>Hora</th><th>Código</th><th>Nombre</th><th>Tipo</th><th class="r">Cantidad</th><th>Usuario</th><th class="r">Stock Resultante</th><th>Motivo</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Hora</th><th>Código</th><th>Nombre</th><th>Tipo</th><th class="r">Cantidad</th><th>Usuario</th><th class="r">Stock Resultante</th><th>Motivo</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
           <div class="empty" id="empty-mov"><div class="big">Sin movimientos</div>Escanea un producto y registra una entrada, salida o merma.</div>
@@ -473,7 +474,18 @@
 </div>
 <div class="toasts" id="toasts"></div>
 
-<!-- Modal de código de barras -->
+<!-- Diálogo de confirmación propio -->
+<div class="bc-overlay" id="confirm-overlay">
+  <div class="bc-modal" style="max-width:360px">
+    <h3 id="confirm-title" style="padding-right:0">Confirmar</h3>
+    <div id="confirm-msg" style="font-size:14px;color:var(--tinta);margin-bottom:20px">¿Estás seguro?</div>
+    <div class="bc-actions">
+      <button class="btn ghost" id="confirm-no">Cancelar</button>
+      <button class="btn" id="confirm-yes">Aceptar</button>
+    </div>
+  </div>
+</div>
+
 <div class="bc-overlay" id="bc-overlay">
   <div class="bc-modal">
     <button class="bc-close" id="bc-close">✕</button>
@@ -531,6 +543,20 @@ function toast(opts){
   setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),320);},opts.long?4200:2800);
 }
 
+/* diálogo de confirmación propio (reemplaza al confirm del navegador) */
+function confirmar(mensaje,titulo){
+  return new Promise(resolve=>{
+    $('#confirm-title').textContent=titulo||'Confirmar';
+    $('#confirm-msg').textContent=mensaje;
+    const ov=$('#confirm-overlay');ov.classList.add('show');
+    const yes=$('#confirm-yes'),no=$('#confirm-no');
+    const cerrar=(val)=>{ov.classList.remove('show');yes.onclick=null;no.onclick=null;resolve(val);};
+    yes.onclick=()=>cerrar(true);
+    no.onclick=()=>cerrar(false);
+    ov.onclick=(e)=>{if(e.target===ov)cerrar(false);};
+  });
+}
+
 /* ====== AUTENTICACIÓN ====== */
 let mode='login';
 function showAuthError(m){const e=$('#auth-err');e.textContent=m;e.style.display='block';}
@@ -571,7 +597,7 @@ $('#auth-btn').onclick=async()=>{
   }catch(e){showAuthError(authMsg(e.code));b.disabled=false;setMode(mode);}
 };
 $('#auth-pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('#auth-btn').click();});
-$('#btn-logout').onclick=()=>{if(confirm('¿Cerrar sesión?'))signOut(auth);};
+$('#btn-logout').onclick=async()=>{if(await confirmar('¿Cerrar sesión?','Cerrar sesión'))signOut(auth);};
 
 onAuthStateChanged(auth,u=>{
   $('#boot').style.display='none';
@@ -668,7 +694,8 @@ function renderMov(){
   const tb=$('#tbl-mov tbody');tb.innerHTML='';
   $('#empty-mov').style.display=rows.length?'none':'block';
   list.forEach(m=>tb.insertAdjacentHTML('beforeend',`<tr><td>${dPart(m.ts)}</td><td>${hPart(m.ts)}</td><td class="mono">${esc(m.code)}</td><td>${esc(nameOf(m.code))}</td>
-    <td>${typeTag[m.type]}</td><td class="r qty-strong">${m.type==='in'?'+':'−'}${m.qty}</td><td>${esc(m.user||'—')}</td><td class="r qty-strong">${m.result}</td><td>${esc(m.reason||'—')}</td></tr>`));
+    <td>${typeTag[m.type]}</td><td class="r qty-strong">${m.type==='in'?'+':'−'}${m.qty}</td><td>${esc(m.user||'—')}</td><td class="r qty-strong">${m.result}</td><td>${esc(m.reason||'—')}</td><td class="r"><button class="btn danger sm" data-delmov="${esc(m.id)}">Eliminar</button></td></tr>`));
+  tb.querySelectorAll('[data-delmov]').forEach(b=>b.onclick=()=>delMov(b.dataset.delmov));
 }
 function statsOf(code){let ent=0,sal=0,mer=0;movimientos.filter(m=>m.code===code).forEach(m=>{if(m.type==='in')ent+=m.qty;else if(m.type==='out')sal+=m.qty;else mer+=m.qty;});return{ent,sal,mer};}
 function renderEst(){
@@ -805,9 +832,33 @@ function salirEdicion(){
 }
 $('#btn-canceledit').onclick=salirEdicion;
 
-async function delProd(code){const p=prodOf(code);if(!confirm('¿Eliminar "'+(p?p.name:code)+'"? Su historial se conserva.'))return;
+async function delProd(code){const p=prodOf(code);if(!(await confirmar('¿Eliminar "'+(p?p.name:code)+'"? Su historial se conserva.','Eliminar producto')))return;
   try{await deleteDoc(doc(db,'negocios',user.uid,'productos',code));if(currentCode===code)hideCards();if(editCode===code)salirEdicion();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});}
   catch(e){toast({kind:'err',msg:e.message});}}
+
+/* ====== ELIMINAR MOVIMIENTOS ====== */
+async function delMov(id){
+  const m=movimientos.find(x=>x.id===id);if(!m)return;
+  const nom=nameOf(m.code),signo=(m.type==='in'?'+':'−')+m.qty;
+  if(!(await confirmar(`¿Eliminar este movimiento de "${nom}" (${signo})? El stock se recalculará.`,'Eliminar movimiento')))return;
+  try{await deleteDoc(doc(db,'negocios',user.uid,'movimientos',id));toast({kind:'info',icon:'🗑',msg:'Movimiento eliminado · stock recalculado'});}
+  catch(e){toast({kind:'err',msg:e.message});}
+}
+$('#btn-clear-mov').onclick=async()=>{
+  if(!movimientos.length){toast({kind:'info',msg:'No hay movimientos para eliminar'});return;}
+  if(!(await confirmar(`Se eliminarán TODOS los movimientos (${movimientos.length}). Los productos y su stock inicial se conservan, pero el historial se borra y el stock vuelve al inicial. Esta acción no se puede deshacer. ¿Continuar?`,'Eliminar todo el historial')))return;
+  try{
+    // borrar en lotes de 400 (límite de Firestore por batch: 500)
+    let pendientes=movimientos.slice();
+    while(pendientes.length){
+      const lote=pendientes.splice(0,400);
+      const batch=writeBatch(db);
+      lote.forEach(m=>batch.delete(doc(db,'negocios',user.uid,'movimientos',m.id)));
+      await batch.commit();
+    }
+    toast({kind:'ok',icon:'🗑',msg:'Historial de movimientos eliminado'});
+  }catch(e){toast({kind:'err',title:'No se pudo eliminar',msg:e.message,long:true});}
+};
 $('#inv-search').oninput=renderInv;$('#inv-cat').onchange=renderInv;$('#est-search').oninput=renderEst;
 
 /* ====== GENERAR CÓDIGO ÚNICO (para productos sin código de fábrica) ====== */
