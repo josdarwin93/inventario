@@ -35,7 +35,20 @@
   .side .logo .dot{width:10px;height:10px;border-radius:50%;background:var(--azul);display:inline-block}
   .side .grp{font-size:10.5px;text-transform:uppercase;letter-spacing:1.4px;color:#7d92ad;padding:18px 22px 7px;font-weight:700}
   .side nav{display:flex;flex-direction:column}
-  .side nav button{background:none;border:none;color:#cdd8e6;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;padding:11px 22px;display:flex;align-items:center;gap:11px;transition:.13s;border-left:3px solid transparent}
+  .side nav button{background:none;border:none;color:#cdd8e6;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;padding:11px 22px;display:flex;align-items:center;gap:11px;transition:.13s;border-left:3px solid transparent;width:100%}
+  .nav-sep{height:1px;background:rgba(255,255,255,.12);margin:8px 22px}
+
+  /* secciones de documento: ayuda, novedades, privacidad */
+  .doc-card{background:var(--panel);border:1px solid var(--linea);border-radius:12px;padding:26px;max-width:760px;line-height:1.65}
+  .doc-card h2{font-size:22px;font-weight:800;margin-bottom:14px;color:var(--tinta)}
+  .doc-card h3{font-size:15px;font-weight:700;margin:20px 0 6px;color:var(--azul-d)}
+  .doc-card p{font-size:14px;color:var(--tinta);margin-bottom:10px}
+  .doc-card ul{margin:6px 0 10px 20px}
+  .doc-card li{font-size:14px;color:var(--tinta);margin-bottom:5px}
+  .doc-card .doc-date{font-size:12px;color:var(--tenue);margin-bottom:16px}
+  .doc-note{margin-top:22px;padding:14px 16px;background:var(--azul-bg);border-radius:8px;font-size:13px;color:var(--azul-d);font-weight:600}
+  .novedad{border-left:3px solid var(--azul);padding-left:16px;margin:16px 0}
+  .novedad-fecha{font-size:12px;color:var(--tenue);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
   .side nav button:hover{background:var(--side-hover);color:#fff}
   .side nav button.on{background:var(--side-hover);color:#fff;border-left-color:var(--azul)}
   .side nav button .ic{width:18px;text-align:center;font-size:15px;opacity:.9}
@@ -104,6 +117,7 @@
 
   .filterbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
   .filterbar input{max-width:280px}.filterbar select{max-width:180px}
+  .filebtns{display:flex;flex-direction:row;gap:6px;align-items:center;flex-shrink:0}
   .spacer{flex:1}
 
   .scan-mode{display:flex;gap:8px;margin-bottom:18px;background:#fff;padding:5px;border-radius:8px;border:1px solid var(--linea2);width:fit-content}
@@ -267,6 +281,10 @@
       <button data-tab="inventario"><span class="ic">📦</span>Inventario</button>
       <button data-tab="movimientos"><span class="ic">🔄</span>Movimientos</button>
       <button data-tab="estadisticas"><span class="ic">📊</span>Estadísticas</button>
+      <div class="nav-sep"></div>
+      <button data-tab="ayuda"><span class="ic">❓</span>Ayuda</button>
+      <button data-tab="novedades"><span class="ic">🔔</span>Novedades</button>
+      <button data-tab="privacidad"><span class="ic">🔒</span>Política de privacidad</button>
     </nav>
     <div class="foot">
       <span class="uemail" id="u-email">—</span>
@@ -337,7 +355,9 @@
         <div class="filterbar">
           <input id="inv-search" placeholder="Buscar por nombre o código…">
           <select id="inv-cat"><option value="">Todas las categorías</option></select>
+          <select id="inv-name"><option value="">Todos los productos</option></select>
           <div class="spacer"></div>
+          <div class="filebtns">
           <button class="btn-file" id="btn-pdf-inv" title="Descargar PDF" aria-label="Descargar PDF">
             <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="36" width="30" height="16" rx="2" fill="#e2231a"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">PDF</text></svg>
           </button>
@@ -347,6 +367,7 @@
           <button class="btn-file" id="btn-export-inv" title="Descargar CSV" aria-label="Descargar CSV">
             <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="36" width="30" height="16" rx="2" fill="#2f6fed"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">CSV</text></svg>
           </button>
+          </div>
         </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-inv">
@@ -421,6 +442,7 @@
           <select id="mov-type"><option value="">Todos los tipos</option><option value="in">Entradas</option><option value="out">Salidas</option><option value="merma">Mermas</option></select>
           <div class="spacer"></div>
           <button class="btn danger sm" id="btn-clear-mov">🗑 Eliminar todo</button>
+          <div class="filebtns">
           <button class="btn-file" id="btn-pdf-mov" title="Descargar PDF" aria-label="Descargar PDF">
             <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="36" width="30" height="16" rx="2" fill="#e2231a"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">PDF</text></svg>
           </button>
@@ -430,6 +452,7 @@
           <button class="btn-file" id="btn-export-mov" title="Descargar CSV" aria-label="Descargar CSV">
             <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="36" width="30" height="16" rx="2" fill="#2f6fed"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">CSV</text></svg>
           </button>
+          </div>
         </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-mov">
@@ -446,6 +469,7 @@
         <div class="filterbar">
           <input id="est-search" placeholder="Buscar producto o código…">
           <div class="spacer"></div>
+          <div class="filebtns">
           <button class="btn-file" id="btn-pdf-est" title="Descargar PDF" aria-label="Descargar PDF">
             <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="36" width="30" height="16" rx="2" fill="#e2231a"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">PDF</text></svg>
           </button>
@@ -455,6 +479,7 @@
           <button class="btn-file" id="btn-export-est" title="Descargar CSV" aria-label="Descargar CSV">
             <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="36" width="30" height="16" rx="2" fill="#2f6fed"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">CSV</text></svg>
           </button>
+          </div>
         </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-est">
@@ -465,8 +490,100 @@
         </div></div>
       </section>
 
-      <!-- DASHBOARD -->
-      <section class="panel-sec on" id="dashboard">
+      <!-- AYUDA -->
+      <section class="panel-sec" id="ayuda">
+        <div class="doc-card">
+          <h2>❓ Ayuda — Cómo usar ControlStock</h2>
+          <p>ControlStock te permite llevar el control de tu inventario: qué productos tienes, cuánto stock, y cada entrada, salida o merma. Aquí tienes una guía rápida.</p>
+
+          <h3>1. Agregar un producto</h3>
+          <p>Ve a <b>Inventario</b>. En el formulario "Nuevo producto", escribe el código de barras (o pulsa <b>⚡ Generar</b> si el producto no trae código), el nombre, la categoría y el precio. Puedes agregar una foto tocando el recuadro. Pulsa <b>Guardar producto</b>.</p>
+
+          <h3>2. Registrar una entrada, salida o merma</h3>
+          <p>Ve a <b>Movimientos</b>. Escanea el código con la cámara (botón <b>Escanear</b>) o escríbelo a mano. Cuando aparezca la tarjeta del producto, elige la cantidad y pulsa <b>Entrada</b> (suma stock), <b>Salida</b> (resta stock) o <b>Merma</b> (pérdida o daño).</p>
+
+          <h3>3. Generar códigos de barra</h3>
+          <p>En <b>Inventario</b>, cada producto tiene un botón <b>Código</b> que muestra su código de barras para imprimir y pegar en el producto.</p>
+
+          <h3>4. Ver tus estadísticas</h3>
+          <p>El <b>Dashboard</b> te muestra el valor de tu inventario, productos en stock bajo y los más movidos. En <b>Estadísticas</b> ves el detalle por producto.</p>
+
+          <h3>5. Exportar reportes</h3>
+          <p>En Inventario, Movimientos y Estadísticas hay botones para descargar tus datos en <b>PDF</b>, <b>Excel</b> o <b>CSV</b>.</p>
+
+          <h3>6. Tus datos están seguros</h3>
+          <p>Todo se guarda automáticamente en la nube. Si cambias de teléfono o cierras la app, tus datos siguen ahí al iniciar sesión de nuevo.</p>
+
+          <div class="doc-note">¿Tienes dudas o algún problema? Contáctanos y con gusto te ayudamos.</div>
+        </div>
+      </section>
+
+      <!-- NOVEDADES -->
+      <section class="panel-sec" id="novedades">
+        <div class="doc-card">
+          <h2>🔔 Novedades</h2>
+          <p>Aquí verás las últimas mejoras y cambios de ControlStock.</p>
+
+          <div class="novedad">
+            <div class="novedad-fecha">Versión actual</div>
+            <h3>Lo más reciente</h3>
+            <ul>
+              <li>Nuevo diseño con paleta de colores renovada.</li>
+              <li>Tres gráficos en el Dashboard: más salidas, más entradas y más mermas.</li>
+              <li>Filtros por categoría y por nombre de producto en el inventario.</li>
+              <li>Generación de códigos de barra para imprimir.</li>
+              <li>Reportes en PDF, Excel y CSV en todas las secciones.</li>
+              <li>Fotos de productos con cámara o galería.</li>
+              <li>Eliminación de movimientos, uno por uno o todos a la vez.</li>
+            </ul>
+          </div>
+
+          <div class="doc-note">Seguimos mejorando ControlStock. ¡Gracias por usarlo!</div>
+        </div>
+      </section>
+
+      <!-- POLÍTICA DE PRIVACIDAD -->
+      <section class="panel-sec" id="privacidad">
+        <div class="doc-card">
+          <h2>🔒 Política de privacidad</h2>
+          <p class="doc-date">Última actualización: julio de 2026</p>
+
+          <p>Esta política explica cómo ControlStock ("la aplicación") maneja tu información. Al usar la aplicación, aceptas lo aquí descrito.</p>
+
+          <h3>Qué información recogemos</h3>
+          <p>Para crear tu cuenta y darte el servicio, recogemos tu <b>correo electrónico</b> y la <b>información que tú ingresas en la aplicación</b>: tus productos, cantidades, movimientos, precios y las fotos que decidas agregar. No pedimos ni recogemos otros datos personales.</p>
+
+          <h3>Cómo usamos tu información</h3>
+          <p>Usamos tu información únicamente para que la aplicación funcione: guardar tu inventario, mostrarte tus datos y sincronizarlos entre tus dispositivos. <b>No vendemos ni compartimos tu información con terceros</b> para publicidad ni ningún otro fin.</p>
+
+          <h3>Dónde se guardan tus datos</h3>
+          <p>Tus datos se almacenan de forma segura en <b>Firebase</b>, un servicio de Google, en la nube. Cada cuenta solo puede acceder a su propia información; los datos de un usuario no son visibles para otros usuarios.</p>
+
+          <h3>Permisos que solicita la aplicación</h3>
+          <p><b>Cámara:</b> se usa para escanear códigos de barra y para tomar fotos de tus productos. Solo se activa cuando tú lo indicas. Las fotos que tomas se guardan junto a tus productos y no se usan para ningún otro fin.</p>
+
+          <h3>Servicios de terceros</h3>
+          <p>La aplicación usa Firebase (Google) para el almacenamiento en la nube y el inicio de sesión. Google puede procesar ciertos datos técnicos según sus propias políticas. Puedes consultar la política de privacidad de Google para más detalle.</p>
+
+          <h3>Seguridad</h3>
+          <p>Nos esforzamos por proteger tu información con medios razonables. Sin embargo, ningún sistema en internet es 100% seguro, por lo que no podemos garantizar seguridad absoluta.</p>
+
+          <h3>Menores de edad</h3>
+          <p>La aplicación no está dirigida a menores de 13 años y no recogemos información de ellos de forma consciente.</p>
+
+          <h3>Eliminación de datos</h3>
+          <p>Puedes eliminar tus productos y movimientos en cualquier momento desde la aplicación. Si deseas eliminar tu cuenta y todos tus datos, contáctanos.</p>
+
+          <h3>Cambios en esta política</h3>
+          <p>Podemos actualizar esta política ocasionalmente. Los cambios se publicarán en esta misma sección.</p>
+
+          <h3>Contacto</h3>
+          <p>Si tienes preguntas sobre esta política de privacidad, puedes escribirnos a través del contacto de la aplicación.</p>
+
+          <div class="doc-note">ControlStock respeta tu privacidad. Tus datos son tuyos.</div>
+        </div>
+      </section>
+
         <div class="kpis">
           <div class="kpi accent"><div class="n" id="k-val">0</div><div class="l">Valor del inventario (USD)</div></div>
           <div class="kpi"><div class="n" id="k-prod">0</div><div class="l">Productos</div></div>
@@ -701,13 +818,13 @@ function stockOf(code){const p=prodOf(code);return(p?p.initial||0:0)+deltaOf(cod
 function lastUpdate(code){const ms=movimientos.filter(m=>m.code===code);return ms.length?ms[ms.length-1].ts:(prodOf(code)||{}).created;}
 
 /* ====== navegación ====== */
-const titles={inventario:['Inventario','Almacén · Existencias'],movimientos:['Movimientos','Almacén · Entradas, salidas y mermas'],estadisticas:['Estadísticas','Almacén · Control por producto'],dashboard:['Dashboard','Almacén · Resumen general']};
+const titles={inventario:['Inventario','Almacén · Existencias'],movimientos:['Movimientos','Almacén · Entradas, salidas y mermas'],estadisticas:['Estadísticas','Almacén · Control por producto'],dashboard:['Dashboard','Almacén · Resumen general'],ayuda:['Ayuda','Guía de uso'],novedades:['Novedades','Últimas mejoras'],privacidad:['Política de privacidad','Tus datos']};
 function goTab(tab){
   $$('.side nav button').forEach(x=>x.classList.toggle('on',x.dataset.tab===tab));
   $$('.panel-sec').forEach(x=>x.classList.toggle('on',x.id===tab));
   $('#page-title').textContent=titles[tab][0];$('#page-crumb').textContent=titles[tab][1];
   // el botón "Registrar movimiento" es un atajo: se oculta si ya estamos en Movimientos
-  $('#quick-mov').style.display=(tab==='movimientos')?'none':'';
+  $('#quick-mov').style.display=(tab==='movimientos'||tab==='ayuda'||tab==='novedades'||tab==='privacidad')?'none':'';
   closeSide();
 }
 $$('.side nav button').forEach(b=>b.onclick=()=>goTab(b.dataset.tab));
@@ -724,6 +841,7 @@ function render(){
 function renderInv(){
   const q=($('#inv-search').value||'').toLowerCase();
   const catSel=$('#inv-cat').value;
+  const nameSel=$('#inv-name').value;
   // rellenar el desplegable de categorías (conservando la selección actual)
   const cats=[...new Set(productos.map(p=>(p.cat||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   const selCat=$('#inv-cat');
@@ -733,11 +851,22 @@ function renderInv(){
     selCat.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
     if(cats.includes(prev))selCat.value=prev;
   }
+  // rellenar el desplegable de nombres de producto (según la categoría elegida)
+  const nombres=[...new Set(productos.filter(p=>!catSel||(p.cat||'').trim()===catSel).map(p=>p.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const selName=$('#inv-name');
+  const claveNombres=catSel+'||'+nombres.join('|');
+  if(selName.dataset.nombres!==claveNombres){
+    selName.dataset.nombres=claveNombres;
+    const prevN=selName.value;
+    selName.innerHTML='<option value="">Todos los productos</option>'+nombres.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    if(nombres.includes(prevN))selName.value=prevN; else selName.value='';
+  }
   const tb=$('#tbl-inv tbody');tb.innerHTML='';
   const list=productos.filter(p=>{
     const okText=p.name.toLowerCase().includes(q)||p.code.toLowerCase().includes(q);
     const okCat=!catSel||(p.cat||'').trim()===catSel;
-    return okText&&okCat;
+    const okName=!nameSel||p.name===nameSel;
+    return okText&&okCat&&okName;
   }).sort((a,b)=>a.name.localeCompare(b.name));
   $('#empty-inv').style.display=productos.length?'none':'block';
   list.forEach(p=>{const st=stockOf(p.code),low=st<=(p.min||0),lu=lastUpdate(p.code);
@@ -932,7 +1061,7 @@ $('#btn-clear-mov').onclick=async()=>{
     toast({kind:'ok',icon:'🗑',msg:'Historial de movimientos eliminado'});
   }catch(e){toast({kind:'err',title:'No se pudo eliminar',msg:e.message,long:true});}
 };
-$('#inv-search').oninput=renderInv;$('#inv-cat').onchange=renderInv;$('#est-search').oninput=renderEst;
+$('#inv-search').oninput=renderInv;$('#inv-cat').onchange=renderInv;$('#inv-name').onchange=renderInv;$('#est-search').oninput=renderEst;
 
 /* ====== GENERAR CÓDIGO ÚNICO (para productos sin código de fábrica) ====== */
 $('#btn-gencode').onclick=()=>{
