@@ -118,6 +118,17 @@
   .filterbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
   .filterbar input{max-width:280px}.filterbar select{max-width:180px}
   .filebtns{display:flex;flex-direction:row;gap:6px;align-items:center;flex-shrink:0}
+
+  /* filtro de fecha */
+  .datefilter{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:10px 12px;background:var(--panel);border:1px solid var(--linea);border-radius:10px}
+  .datefilter .df-label{font-size:12px;font-weight:700;color:var(--tenue);text-transform:uppercase;letter-spacing:.4px;margin-right:2px}
+  .df-chip{font-family:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border:1px solid var(--linea2);border-radius:20px;background:#fff;color:var(--tinta);cursor:pointer;transition:.12s}
+  .df-chip:hover{border-color:var(--azul)}
+  .df-chip.on{background:var(--azul);color:#fff;border-color:var(--azul)}
+  .df-range{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .df-range input[type=date]{font-family:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--linea2);border-radius:7px;color:var(--tinta)}
+  .df-range span{font-size:12px;color:var(--tenue)}
+  .df-info{font-size:12px;color:var(--azul-d);font-weight:600;margin-left:auto}
   .spacer{flex:1}
 
   .scan-mode{display:flex;gap:8px;margin-bottom:18px;background:#fff;padding:5px;border-radius:8px;border:1px solid var(--linea2);width:fit-content}
@@ -437,6 +448,18 @@
         </div>
 
         <div class="sec-title">Hoja de movimientos</div>
+        <div class="datefilter">
+          <span class="df-label">Fecha:</span>
+          <button class="df-chip on" data-df="mov" data-p="all">Todo</button>
+          <button class="df-chip" data-df="mov" data-p="today">Hoy</button>
+          <button class="df-chip" data-df="mov" data-p="month">Este mes</button>
+          <button class="df-chip" data-df="mov" data-p="year">Este año</button>
+          <div class="df-range">
+            <span>Desde</span><input type="date" id="mov-from">
+            <span>hasta</span><input type="date" id="mov-to">
+          </div>
+          <span class="df-info" id="mov-df-info"></span>
+        </div>
         <div class="filterbar">
           <input id="mov-search" placeholder="Buscar producto o código…">
           <select id="mov-type"><option value="">Todos los tipos</option><option value="in">Entradas</option><option value="out">Salidas</option><option value="merma">Mermas</option></select>
@@ -466,6 +489,18 @@
       <!-- ESTADISTICAS -->
       <section class="panel-sec" id="estadisticas">
         <div class="sec-title">Estadísticas por producto</div>
+        <div class="datefilter">
+          <span class="df-label">Fecha:</span>
+          <button class="df-chip on" data-df="est" data-p="all">Todo</button>
+          <button class="df-chip" data-df="est" data-p="today">Hoy</button>
+          <button class="df-chip" data-df="est" data-p="month">Este mes</button>
+          <button class="df-chip" data-df="est" data-p="year">Este año</button>
+          <div class="df-range">
+            <span>Desde</span><input type="date" id="est-from">
+            <span>hasta</span><input type="date" id="est-to">
+          </div>
+          <span class="df-info" id="est-df-info"></span>
+        </div>
         <div class="filterbar">
           <input id="est-search" placeholder="Buscar producto o código…">
           <div class="spacer"></div>
@@ -586,6 +621,18 @@
 
       <!-- DASHBOARD -->
       <section class="panel-sec on" id="dashboard">
+        <div class="datefilter">
+          <span class="df-label">Fecha:</span>
+          <button class="df-chip on" data-df="dash" data-p="all">Todo</button>
+          <button class="df-chip" data-df="dash" data-p="today">Hoy</button>
+          <button class="df-chip" data-df="dash" data-p="month">Este mes</button>
+          <button class="df-chip" data-df="dash" data-p="year">Este año</button>
+          <div class="df-range">
+            <span>Desde</span><input type="date" id="dash-from">
+            <span>hasta</span><input type="date" id="dash-to">
+          </div>
+          <span class="df-info" id="dash-df-info"></span>
+        </div>
         <div class="kpis">
           <div class="kpi accent"><div class="n" id="k-val">0</div><div class="l">Valor del inventario (USD)</div></div>
           <div class="kpi"><div class="n" id="k-prod">0</div><div class="l">Productos</div></div>
@@ -836,6 +883,85 @@ function closeSide(){$('#side').classList.remove('open');$('#backdrop').classLis
 $('#menu-btn').onclick=openSide;$('#backdrop').onclick=closeSide;
 
 /* ====== RENDER ====== */
+/* ====== FILTROS DE FECHA (independientes por sección) ====== */
+const dateFilters={mov:{preset:'all',from:null,to:null},est:{preset:'all',from:null,to:null},dash:{preset:'all',from:null,to:null}};
+
+// límites [inicio, fin] en milisegundos según el filtro de una sección
+function rangoDe(sec){
+  const f=dateFilters[sec];
+  const now=new Date();
+  if(f.preset==='today'){
+    const a=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+    return [a,a+86400000-1];
+  }
+  if(f.preset==='month'){
+    const a=new Date(now.getFullYear(),now.getMonth(),1).getTime();
+    const b=new Date(now.getFullYear(),now.getMonth()+1,1).getTime()-1;
+    return [a,b];
+  }
+  if(f.preset==='year'){
+    const a=new Date(now.getFullYear(),0,1).getTime();
+    const b=new Date(now.getFullYear()+1,0,1).getTime()-1;
+    return [a,b];
+  }
+  if(f.preset==='range'){
+    const a=f.from?new Date(f.from+'T00:00:00').getTime():-Infinity;
+    const b=f.to?new Date(f.to+'T23:59:59').getTime():Infinity;
+    return [a,b];
+  }
+  return [-Infinity,Infinity]; // 'all'
+}
+// ¿este movimiento entra en el filtro de la sección?
+function enRango(m,sec){
+  const [a,b]=rangoDe(sec);
+  const t=tsMillis(m.ts);
+  return t>=a&&t<=b;
+}
+// movimientos filtrados por sección
+function movsFiltrados(sec){return movimientos.filter(m=>enRango(m,sec));}
+// texto informativo del período activo
+function textoPeriodo(sec){
+  const f=dateFilters[sec];
+  if(f.preset==='all')return '';
+  if(f.preset==='today')return 'Solo hoy';
+  if(f.preset==='month')return 'Este mes';
+  if(f.preset==='year')return 'Este año';
+  if(f.preset==='range'){
+    const d=s=>s?s.split('-').reverse().join('/'):'…';
+    return `${d(f.from)} — ${d(f.to)}`;
+  }
+  return '';
+}
+// stats de un producto respetando el filtro de la sección
+function statsOfF(code,sec){let ent=0,sal=0,mer=0;movsFiltrados(sec).filter(m=>m.code===code).forEach(m=>{if(m.type==='in')ent+=m.qty;else if(m.type==='out')sal+=m.qty;else mer+=m.qty;});return{ent,sal,mer};}
+
+// conectar los controles del filtro
+function initDateFilters(){
+  $$('.df-chip').forEach(chip=>{
+    chip.onclick=()=>{
+      const sec=chip.dataset.df,preset=chip.dataset.p;
+      dateFilters[sec].preset=preset;
+      // marcar el chip activo dentro de su sección
+      $$(`.df-chip[data-df="${sec}"]`).forEach(c=>c.classList.toggle('on',c===chip));
+      // limpiar rango si eligió un preset
+      $('#'+sec+'-from').value='';$('#'+sec+'-to').value='';
+      dateFilters[sec].from=null;dateFilters[sec].to=null;
+      render();
+    };
+  });
+  ['mov','est','dash'].forEach(sec=>{
+    const from=$('#'+sec+'-from'),to=$('#'+sec+'-to');
+    const onRange=()=>{
+      dateFilters[sec].preset='range';
+      dateFilters[sec].from=from.value||null;
+      dateFilters[sec].to=to.value||null;
+      $$(`.df-chip[data-df="${sec}"]`).forEach(c=>c.classList.remove('on'));
+      render();
+    };
+    from.onchange=onRange;to.onchange=onRange;
+  });
+}
+
 function render(){
   renderInv();renderMov();renderEst();renderDash();
   if(currentCode&&prodOf(currentCode))showProductCard(currentCode);
@@ -883,9 +1009,10 @@ function renderInv(){
 function renderMov(){
   const q=($('#mov-search').value||'').toLowerCase(),tf=$('#mov-type').value;
   const running={};const rows=movimientos.map(m=>{const base=(prodOf(m.code)||{}).initial||0;if(running[m.code]===undefined)running[m.code]=base;running[m.code]+=(m.type==='in'?m.qty:-m.qty);return{...m,result:running[m.code]};});
-  let list=rows.filter(m=>{const okt=!tf||m.type===tf;const oks=!q||m.code.toLowerCase().includes(q)||nameOf(m.code).toLowerCase().includes(q);return okt&&oks;}).reverse();
+  let list=rows.filter(m=>{const okt=!tf||m.type===tf;const oks=!q||m.code.toLowerCase().includes(q)||nameOf(m.code).toLowerCase().includes(q);const okf=enRango(m,'mov');return okt&&oks&&okf;}).reverse();
+  $('#mov-df-info').textContent=textoPeriodo('mov')?textoPeriodo('mov')+' · '+list.length+' mov.':'';
   const tb=$('#tbl-mov tbody');tb.innerHTML='';
-  $('#empty-mov').style.display=rows.length?'none':'block';
+  $('#empty-mov').style.display=list.length?'none':'block';
   list.forEach(m=>tb.insertAdjacentHTML('beforeend',`<tr><td>${dPart(m.ts)}</td><td>${hPart(m.ts)}</td><td class="mono">${esc(m.code)}</td><td>${esc(nameOf(m.code))}</td>
     <td>${typeTag[m.type]}</td><td class="r qty-strong">${m.type==='in'?'+':'−'}${m.qty}</td><td>${esc(m.user||'—')}</td><td class="r qty-strong">${m.result}</td><td>${esc(m.reason||'—')}</td><td class="r"><button class="btn danger sm" data-delmov="${esc(m.id)}">Eliminar</button></td></tr>`));
   tb.querySelectorAll('[data-delmov]').forEach(b=>b.onclick=()=>delMov(b.dataset.delmov));
@@ -893,23 +1020,26 @@ function renderMov(){
 function statsOf(code){let ent=0,sal=0,mer=0;movimientos.filter(m=>m.code===code).forEach(m=>{if(m.type==='in')ent+=m.qty;else if(m.type==='out')sal+=m.qty;else mer+=m.qty;});return{ent,sal,mer};}
 function renderEst(){
   const q=($('#est-search').value||'').toLowerCase();
+  $('#est-df-info').textContent=textoPeriodo('est');
   const tb=$('#tbl-est tbody'),tf=$('#tbl-est tfoot');tb.innerHTML='';tf.innerHTML='';
   const list=productos.filter(p=>p.name.toLowerCase().includes(q)||p.code.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
   $('#empty-est').style.display=productos.length?'none':'block';
   let tE=0,tS=0,tM=0,tV=0;
-  list.forEach(p=>{const s=statsOf(p.code),st=stockOf(p.code),val=st*(p.price||0);tE+=s.ent;tS+=s.sal;tM+=s.mer;tV+=val;
+  list.forEach(p=>{const s=statsOfF(p.code,'est'),st=stockOf(p.code),val=st*(p.price||0);tE+=s.ent;tS+=s.sal;tM+=s.mer;tV+=val;
     tb.insertAdjacentHTML('beforeend',`<tr><td>${esc(p.name)}</td><td class="mono">${esc(p.code)}</td><td class="r" style="color:var(--verde-tx);font-weight:700">${s.ent}</td>
       <td class="r" style="color:var(--rojo-tx);font-weight:700">${s.sal}</td><td class="r" style="color:var(--ambar-tx);font-weight:700">${s.mer}</td><td class="r qty-strong">${st}</td><td class="r">${money(val)}</td></tr>`);});
   if(productos.length)tf.innerHTML=`<tr style="background:var(--bg);font-weight:800"><td colspan="2">TOTALES</td><td class="r">${tE}</td><td class="r">${tS}</td><td class="r">${tM}</td><td class="r"></td><td class="r">${money(tV)}</td></tr>`;
 }
 function renderDash(){
+  $('#dash-df-info').textContent=textoPeriodo('dash');
+  const movsF=movsFiltrados('dash');
   const totStock=productos.reduce((a,p)=>a+stockOf(p.code),0);
   const totVal=productos.reduce((a,p)=>a+stockOf(p.code)*(p.price||0),0);
   const low=productos.filter(p=>stockOf(p.code)<=(p.min||0));
-  $('#k-val').textContent=money(totVal);$('#k-prod').textContent=productos.length;$('#k-stock').textContent=totStock;$('#k-mov').textContent=movimientos.length;$('#k-low').textContent=low.length;
-  // Tres rankings: salidas, entradas y mermas (top 6 cada uno)
+  $('#k-val').textContent=money(totVal);$('#k-prod').textContent=productos.length;$('#k-stock').textContent=totStock;$('#k-mov').textContent=movsF.length;$('#k-low').textContent=low.length;
+  // Tres rankings: salidas, entradas y mermas (top 6 cada uno), respetando la fecha
   function pintarTop(campo,idDiv,idEmpty,color){
-    const tops=productos.map(p=>({name:p.name,v:statsOf(p.code)[campo]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,6);
+    const tops=productos.map(p=>({name:p.name,v:statsOfF(p.code,'dash')[campo]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,6);
     const max=Math.max(...tops.map(t=>t.v),1);
     $('#'+idEmpty).style.display=tops.length?'none':'block';
     $('#'+idDiv).innerHTML=tops.map(t=>`<div class="bar-row"><div class="nm" title="${esc(t.name)}">${esc(t.name)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(t.v/max*100)}%;background:${color}"></div></div><div class="v">${t.v}</div></div>`).join('');
@@ -917,7 +1047,7 @@ function renderDash(){
   pintarTop('sal','dash-top-sal','dash-top-sal-empty','var(--rojo)');
   pintarTop('ent','dash-top-ent','dash-top-ent-empty','var(--verde)');
   pintarTop('mer','dash-top-mer','dash-top-mer-empty','var(--ambar)');
-  const cnt={in:0,out:0,merma:0};movimientos.forEach(m=>cnt[m.type]+=m.qty);const tot=cnt.in+cnt.out+cnt.merma;
+  const cnt={in:0,out:0,merma:0};movsF.forEach(m=>cnt[m.type]+=m.qty);const tot=cnt.in+cnt.out+cnt.merma;
   $('#dash-types-empty').style.display=tot?'none':'block';
   const cmap={in:['Entradas','var(--verde)'],out:['Salidas','var(--rojo)'],merma:['Mermas','var(--ambar)']};
   $('#dash-types').innerHTML=Object.keys(cnt).map(k=>`<div class="bar-row"><div class="nm">${cmap[k][0]}</div><div class="bar-track"><div class="bar-fill" style="width:${tot?Math.round(cnt[k]/tot*100):0}%;background:${cmap[k][1]}"></div></div><div class="v">${cnt[k]}</div></div>`).join('');
@@ -926,7 +1056,7 @@ function renderDash(){
   low.sort((a,b)=>(stockOf(a.code)-(a.min||0))-(stockOf(b.code)-(b.min||0))).forEach(p=>{const st=stockOf(p.code),falt=Math.max((p.min||0)-st,0);
     tba.insertAdjacentHTML('beforeend',`<tr class="rowlow"><td class="mono">${esc(p.code)}</td><td>${esc(p.name)}</td><td class="r qty-strong">${st}</td><td class="r">${p.min||0}</td><td class="r" style="color:var(--rojo);font-weight:800">${falt}</td></tr>`);});
   const tbr=$('#tbl-dashrecent tbody');tbr.innerHTML='';
-  const recent=movimientos.slice().reverse().slice(0,8);
+  const recent=movsF.slice().reverse().slice(0,8);
   $('#empty-dashrecent').style.display=recent.length?'none':'block';
   recent.forEach(m=>tbr.insertAdjacentHTML('beforeend',`<tr><td>${dPart(m.ts)}</td><td>${hPart(m.ts)}</td><td>${esc(nameOf(m.code))}</td><td>${typeTag[m.type]}</td><td class="r qty-strong">${m.type==='in'?'+':'−'}${m.qty}</td><td>${esc(m.user||'—')}</td></tr>`));
 }
@@ -1064,6 +1194,7 @@ $('#btn-clear-mov').onclick=async()=>{
   }catch(e){toast({kind:'err',title:'No se pudo eliminar',msg:e.message,long:true});}
 };
 $('#inv-search').oninput=renderInv;$('#inv-cat').onchange=renderInv;$('#inv-name').onchange=renderInv;$('#est-search').oninput=renderEst;
+initDateFilters();
 
 /* ====== GENERAR CÓDIGO ÚNICO (para productos sin código de fábrica) ====== */
 $('#btn-gencode').onclick=()=>{
@@ -1284,7 +1415,7 @@ $('#btn-export-mov').onclick=()=>{const r=[['Fecha','Hora','Codigo','Nombre','Ti
   const running={};movimientos.forEach(m=>{const base=(prodOf(m.code)||{}).initial||0;if(running[m.code]===undefined)running[m.code]=base;running[m.code]+=(m.type==='in'?m.qty:-m.qty);
     r.push([dPart(m.ts),hPart(m.ts),m.code,nameOf(m.code),typeName[m.type],m.qty,m.user||'',running[m.code],m.reason||'']);});downloadCSV('movimientos.csv',r);};
 $('#btn-export-est').onclick=()=>{const r=[['Producto','Codigo','Total Entradas','Total Salidas','Total Mermas','Stock Actual','Valor Inventario (USD)']];
-  productos.forEach(p=>{const s=statsOf(p.code),st=stockOf(p.code);r.push([p.name,p.code,s.ent,s.sal,s.mer,st,(st*(p.price||0)).toFixed(2)]);});downloadCSV('estadisticas.csv',r);};
+  productos.forEach(p=>{const s=statsOfF(p.code,'est'),st=stockOf(p.code);r.push([p.name,p.code,s.ent,s.sal,s.mer,st,(st*(p.price||0)).toFixed(2)]);});downloadCSV('estadisticas.csv',r);};
 
 /* ====== EXPORTAR EXCEL (.xlsx con formato) ====== */
 function nombreArchivo(base){
@@ -1340,7 +1471,7 @@ $('#btn-export-mov-xls').onclick=()=>{
 $('#btn-export-est-xls').onclick=()=>{
   const headers=['Producto','Código','Total Entradas','Total Salidas','Total Mermas','Stock Actual','Valor Inventario (USD)'];
   const rows=productos.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(p=>{
-    const s=statsOf(p.code),st=stockOf(p.code);
+    const s=statsOfF(p.code,'est'),st=stockOf(p.code);
     return [p.name,p.code,s.ent,s.sal,s.mer,st,Number((st*(p.price||0)).toFixed(2))];
   });
   exportXLSX('estadisticas','Estadísticas',headers,rows,[26,16,15,14,14,13,18],[6]);
@@ -1424,7 +1555,7 @@ $('#btn-pdf-est').onclick=()=>{
   const {docp,ahora}=base;
   const ordenados=productos.slice().sort((a,b)=>a.name.localeCompare(b.name));
   let tE=0,tS=0,tM=0,tV=0;
-  const body=ordenados.map(p=>{const s=statsOf(p.code),st=stockOf(p.code),val=st*(p.price||0);tE+=s.ent;tS+=s.sal;tM+=s.mer;tV+=val;
+  const body=ordenados.map(p=>{const s=statsOfF(p.code,'est'),st=stockOf(p.code),val=st*(p.price||0);tE+=s.ent;tS+=s.sal;tM+=s.mer;tV+=val;
     return [p.name,p.code,String(s.ent),String(s.sal),String(s.mer),String(st),'$'+val.toFixed(2)];});
   docp.setTextColor(60,60,75);docp.setFontSize(10);let y=96;
   docp.setFont('helvetica','bold');docp.text('Resumen',40,y);docp.setFont('helvetica','normal');y+=16;
