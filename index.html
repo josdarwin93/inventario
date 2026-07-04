@@ -19,12 +19,12 @@
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <style>
   :root{
-    --side:#1b2a4a; --side2:#13203a; --side-hover:#33406b;
-    --azul:#6d4aff; --azul-d:#5634e0; --azul-bg:#efeaff;
-    --bg:#f6f6fb; --panel:#ffffff; --tinta:#2a2a3c; --tenue:#7e7e95; --linea:#e8e6f0; --linea2:#d8d5e6;
-    --verde:#15b66e; --verde-bg:#e3f8ee; --verde-tx:#0c7a47;
-    --rojo:#f0506e; --rojo-bg:#fde8ec; --rojo-tx:#b32743;
-    --ambar:#f5a623; --ambar-bg:#fef3df; --ambar-tx:#9a6510;
+    --side:#2c4a3e; --side2:#213a30; --side-hover:#3d5f52;
+    --azul:#4fa095; --azul-d:#3d7d74; --azul-bg:#e3f0ec;
+    --bg:#f4f7f4; --panel:#ffffff; --tinta:#2b3a34; --tenue:#78877f; --linea:#e2ebe6; --linea2:#cdddd4;
+    --verde:#5aa538; --verde-bg:#e8f3df; --verde-tx:#3c6b25;
+    --rojo:#d97b63; --rojo-bg:#f7e9e4; --rojo-tx:#a85340;
+    --ambar:#c9a94e; --ambar-bg:#f6efd9; --ambar-tx:#836a20;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tinta);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -543,6 +543,13 @@ const fbApp=initializeApp(firebaseConfig);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
 
+/* ====== MODO VISTA PREVIA ======
+   Si la app NO está en su dominio real (GitHub Pages / bit.ly), no se puede
+   conectar a Firebase. En ese caso mostramos la interfaz con datos de ejemplo
+   locales, solo para ver el diseño. Los datos reales solo funcionan en producción. */
+const DOMINIO_REAL='josdarwin93.github.io';
+const MODO_PREVIEW=(location.hostname!==DOMINIO_REAL);
+
 /* ====== ESTADO ====== */
 let user=null, productos=[], movimientos=[];
 let unsubProd=null, unsubMov=null;
@@ -621,22 +628,50 @@ $('#auth-btn').onclick=async()=>{
 $('#auth-pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('#auth-btn').click();});
 $('#btn-logout').onclick=async()=>{if(await confirmar('¿Cerrar sesión?','Cerrar sesión'))signOut(auth);};
 
-onAuthStateChanged(auth,u=>{
+if(MODO_PREVIEW){
+  // Vista previa: mostramos la app con datos de ejemplo, sin nube ni login
+  arrancarPreview();
+}else{
+  onAuthStateChanged(auth,u=>{
+    $('#boot').style.display='none';
+    if(u){
+      user=u;
+      $('#auth').style.display='none';$('#app-root').style.display='block';
+      $('#u-email').textContent=u.email;
+      startListening();
+    }else{
+      user=null;
+      if(unsubProd)unsubProd();if(unsubMov)unsubMov();
+      productos=[];movimientos=[];
+      $('#app-root').style.display='none';$('#auth').style.display='flex';
+      $('#auth-email').value='';$('#auth-pass').value='';setMode('login');
+      const b=$('#auth-btn');b.disabled=false;
+    }
+  });
+}
+
+function arrancarPreview(){
+  user={uid:'preview',email:'vista.previa@controlstock'};
   $('#boot').style.display='none';
-  if(u){
-    user=u;
-    $('#auth').style.display='none';$('#app-root').style.display='block';
-    $('#u-email').textContent=u.email;
-    startListening();
-  }else{
-    user=null;
-    if(unsubProd)unsubProd();if(unsubMov)unsubMov();
-    productos=[];movimientos=[];
-    $('#app-root').style.display='none';$('#auth').style.display='flex';
-    $('#auth-email').value='';$('#auth-pass').value='';setMode('login');
-    const b=$('#auth-btn');b.disabled=false;
-  }
-});
+  $('#auth').style.display='none';$('#app-root').style.display='block';
+  $('#u-email').textContent='Vista previa (sin nube)';
+  setSync(false);$('#sync-text').textContent='Vista previa';
+  // datos de ejemplo en memoria
+  productos=[
+    {code:'CD-6',name:'Producto CD-6',cat:'Bronce',pres:'Unidad',initial:10,min:5,price:12.50,created:Date.now()},
+    {code:'CD-62',name:'Producto CD-62',cat:'Bronce',pres:'Unidad',initial:12,min:4,price:8.00,created:Date.now()},
+    {code:'CD-4',name:'Producto CD-4',cat:'Plata',pres:'Caja',initial:11,min:3,price:20.00,created:Date.now()},
+    {code:'CD-63',name:'Producto CD-63',cat:'Plata',pres:'Unidad',initial:34,min:10,price:5.50,created:Date.now()}
+  ];
+  movimientos=[
+    {id:'m1',code:'CD-6',type:'in',qty:10,user:'Josdarwin',reason:'',ts:Date.now()-86400000},
+    {id:'m2',code:'CD-62',type:'out',qty:2,user:'Josdarwin',reason:'venta',ts:Date.now()-3600000},
+    {id:'m3',code:'CD-4',type:'in',qty:5,user:'Josdarwin',reason:'',ts:Date.now()-1800000}
+  ];
+  render();
+  toast({kind:'info',title:'Modo vista previa',msg:'Estás viendo el diseño con datos de ejemplo. El login y la nube funcionan al publicar en GitHub.',long:true});
+}
+
 
 /* ====== FIRESTORE: rutas y escucha en tiempo real ====== */
 function prodCol(){return collection(db,'negocios',user.uid,'productos');}
@@ -805,12 +840,14 @@ $('#btn-addprod').onclick=async()=>{
       // EDITAR: conservamos initial y created; actualizamos el resto
       const p=prodOf(editCode);
       const datos={name,cat,pres,min,price,initial:p.initial||0,created:p.created||serverTimestamp(),photo:photoData||''};
+      if(MODO_PREVIEW){Object.assign(p,datos);render();toast({kind:'ok',title:'Producto actualizado',msg:name});salirEdicion();return;}
       await setDoc(doc(db,'negocios',user.uid,'productos',editCode),datos);
       toast({kind:'ok',title:'Producto actualizado',msg:name});
       salirEdicion();
     }else{
       if(prodOf(code)){toast({kind:'err',msg:'Ya existe un producto con ese código'});return;}
       const initial=parseInt($('#p-stock').value)||0;
+      if(MODO_PREVIEW){productos.push({code,name,cat,pres,initial,min,price,photo:photoData||'',created:Date.now()});clearProdForm();render();toast({kind:'ok',title:'Producto guardado',msg:`${name} (${code}) · stock inicial ${initial}`});return;}
       await setDoc(doc(db,'negocios',user.uid,'productos',code),{name,cat,pres,initial,min,price,photo:photoData||'',created:serverTimestamp()});
       clearProdForm();
       toast({kind:'ok',title:'Producto guardado',msg:`${name} (${code}) · stock inicial ${initial}`});
@@ -855,7 +892,8 @@ function salirEdicion(){
 $('#btn-canceledit').onclick=salirEdicion;
 
 async function delProd(code){const p=prodOf(code);if(!(await confirmar('¿Eliminar "'+(p?p.name:code)+'"? Su historial se conserva.','Eliminar producto')))return;
-  try{await deleteDoc(doc(db,'negocios',user.uid,'productos',code));if(currentCode===code)hideCards();if(editCode===code)salirEdicion();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});}
+  try{if(MODO_PREVIEW){productos=productos.filter(p=>p.code!==code);if(currentCode===code)hideCards();if(editCode===code)salirEdicion();render();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});return;}
+    await deleteDoc(doc(db,'negocios',user.uid,'productos',code));if(currentCode===code)hideCards();if(editCode===code)salirEdicion();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});}
   catch(e){toast({kind:'err',msg:e.message});}}
 
 /* ====== ELIMINAR MOVIMIENTOS ====== */
@@ -863,12 +901,14 @@ async function delMov(id){
   const m=movimientos.find(x=>x.id===id);if(!m)return;
   const nom=nameOf(m.code),signo=(m.type==='in'?'+':'−')+m.qty;
   if(!(await confirmar(`¿Eliminar este movimiento de "${nom}" (${signo})? El stock se recalculará.`,'Eliminar movimiento')))return;
-  try{await deleteDoc(doc(db,'negocios',user.uid,'movimientos',id));toast({kind:'info',icon:'🗑',msg:'Movimiento eliminado · stock recalculado'});}
+  try{if(MODO_PREVIEW){movimientos=movimientos.filter(x=>x.id!==id);render();toast({kind:'info',icon:'🗑',msg:'Movimiento eliminado · stock recalculado'});return;}
+    await deleteDoc(doc(db,'negocios',user.uid,'movimientos',id));toast({kind:'info',icon:'🗑',msg:'Movimiento eliminado · stock recalculado'});}
   catch(e){toast({kind:'err',msg:e.message});}
 }
 $('#btn-clear-mov').onclick=async()=>{
   if(!movimientos.length){toast({kind:'info',msg:'No hay movimientos para eliminar'});return;}
   if(!(await confirmar(`Se eliminarán TODOS los movimientos (${movimientos.length}). Los productos y su stock inicial se conservan, pero el historial se borra y el stock vuelve al inicial. Esta acción no se puede deshacer. ¿Continuar?`,'Eliminar todo el historial')))return;
+  if(MODO_PREVIEW){movimientos=[];render();toast({kind:'ok',icon:'🗑',msg:'Historial de movimientos eliminado'});return;}
   try{
     // borrar en lotes de 400 (límite de Firestore por batch: 500)
     let pendientes=movimientos.slice();
@@ -981,6 +1021,13 @@ async function registrarDesdeCard(type){
   const stockAntes=stockOf(code);
   if(type!=='in'&&qty>stockAntes){toast({kind:'err',title:'Stock insuficiente',msg:`${p.name}: disponible ${stockAntes}, intentas sacar ${qty}`,long:true});return;}
   try{
+    if(MODO_PREVIEW){
+      movimientos.push({id:'m'+Date.now(),code,type,qty,user:$('#pc-user').value.trim(),reason:$('#pc-reason').value.trim(),ts:Date.now()});
+      const nuevoStock=stockAntes+(type==='in'?qty:-qty);
+      const verbo={in:'Entrada registrada',out:'Salida registrada',merma:'Merma registrada'}[type];
+      render();toast({kind:'ok',title:verbo,msg:`${p.name} · ${type==='in'?'+':'−'}${qty} · stock ahora: ${nuevoStock}`});
+      $('#pc-qty').value=1;$('#pc-reason').value='';return;
+    }
     await addDoc(movCol(),{code,type,qty,user:$('#pc-user').value.trim(),reason:$('#pc-reason').value.trim(),ts:serverTimestamp()});
     const nuevoStock=stockAntes+(type==='in'?qty:-qty);
     const verbo={in:'Entrada registrada',out:'Salida registrada',merma:'Merma registrada'}[type];
