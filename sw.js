@@ -1,8 +1,10 @@
-// Service worker mínimo para PWA instalable.
-// Cachea el cascarón de la app para que abra rápido y aunque la red falle.
+// Service worker para PWA instalable.
+// Estrategia: la interfaz (index.html) SIEMPRE se busca fresca de la red,
+// para que las actualizaciones se vean de inmediato. Solo se usa el caché
+// como respaldo si no hay conexión.
 // (Los datos viven en Firestore en la nube; esto solo guarda la interfaz.)
 
-const CACHE = 'inventario-v1';
+const CACHE = 'controlstock-v2';   // subir este número invalida el caché viejo
 const ASSETS = [
   './',
   './index.html',
@@ -25,16 +27,26 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const req = e.request;
-  // Nunca interceptamos llamadas a Firebase/Firestore: deben ir siempre a la red.
-  if (req.url.includes('googleapis.com') || req.url.includes('firebase') || req.url.includes('gstatic')) {
+  if (req.url.includes('googleapis.com') || req.url.includes('firebase') ||
+      req.url.includes('gstatic') || req.url.includes('cdn') ||
+      req.url.includes('jsdelivr') || req.url.includes('cloudflare')) {
     return;
   }
-  // Para el resto: primero red, y si falla, usamos el caché (útil sin internet).
+  if (req.mode === 'navigate' || req.destination === 'document' || req.url.includes('index.html')) {
+    e.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy)).catch(()=>{});
+        return res;
+      }).catch(() => caches.match(req).then(r => r || caches.match('./index.html')))
+    );
+    return;
+  }
   e.respondWith(
-    fetch(req).then((res) => {
+    caches.match(req).then((cached) => cached || fetch(req).then((res) => {
       const copy = res.clone();
       caches.open(CACHE).then((c) => c.put(req, copy)).catch(()=>{});
       return res;
-    }).catch(() => caches.match(req))
+    }))
   );
 });
