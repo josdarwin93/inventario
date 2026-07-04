@@ -614,15 +614,6 @@
 
       <!-- DASHBOARD -->
       <section class="panel-sec on" id="dashboard">
-        <div class="datefilter">
-          <span class="df-label">Fecha:</span>
-          <div class="df-range">
-            <span>Desde</span><input type="date" id="dash-from">
-            <span>hasta</span><input type="date" id="dash-to">
-            <button class="df-clear" data-df="dash" type="button">Limpiar</button>
-          </div>
-          <span class="df-info" id="dash-df-info"></span>
-        </div>
         <div class="kpis">
           <div class="kpi accent"><div class="n" id="k-val">0</div><div class="l">Valor del inventario (USD)</div></div>
           <div class="kpi"><div class="n" id="k-prod">0</div><div class="l">Productos</div></div>
@@ -874,7 +865,7 @@ $('#menu-btn').onclick=openSide;$('#backdrop').onclick=closeSide;
 
 /* ====== RENDER ====== */
 /* ====== FILTROS DE FECHA (solo desde-hasta, independientes por sección) ====== */
-const dateFilters={mov:{from:null,to:null},est:{from:null,to:null},dash:{from:null,to:null}};
+const dateFilters={mov:{from:null,to:null},est:{from:null,to:null}};
 
 // límites [inicio, fin] en milisegundos según el filtro de una sección
 function rangoDe(sec){
@@ -903,7 +894,7 @@ function statsOfF(code,sec){let ent=0,sal=0,mer=0;movsFiltrados(sec).filter(m=>m
 
 // conectar los controles del filtro
 function initDateFilters(){
-  ['mov','est','dash'].forEach(sec=>{
+  ['mov','est'].forEach(sec=>{
     const from=$('#'+sec+'-from'),to=$('#'+sec+'-to');
     const onRange=()=>{
       dateFilters[sec].from=from.value||null;
@@ -991,15 +982,14 @@ function renderEst(){
   if(productos.length)tf.innerHTML=`<tr style="background:var(--bg);font-weight:800"><td colspan="2">TOTALES</td><td class="r">${tE}</td><td class="r">${tS}</td><td class="r">${tM}</td><td class="r"></td><td class="r">${money(tV)}</td></tr>`;
 }
 function renderDash(){
-  $('#dash-df-info').textContent=textoPeriodo('dash');
-  const movsF=movsFiltrados('dash');
+  const movsF=movimientos;
   const totStock=productos.reduce((a,p)=>a+stockOf(p.code),0);
   const totVal=productos.reduce((a,p)=>a+stockOf(p.code)*(p.price||0),0);
   const low=productos.filter(p=>stockOf(p.code)<=(p.min||0));
   $('#k-val').textContent=money(totVal);$('#k-prod').textContent=productos.length;$('#k-stock').textContent=totStock;$('#k-mov').textContent=movsF.length;$('#k-low').textContent=low.length;
-  // Tres rankings: salidas, entradas y mermas (top 6 cada uno), respetando la fecha
+  // Tres rankings: salidas, entradas y mermas (top 6 cada uno)
   function pintarTop(campo,idDiv,idEmpty,color){
-    const tops=productos.map(p=>({name:p.name,v:statsOfF(p.code,'dash')[campo]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,6);
+    const tops=productos.map(p=>({name:p.name,v:statsOf(p.code)[campo]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,6);
     const max=Math.max(...tops.map(t=>t.v),1);
     $('#'+idEmpty).style.display=tops.length?'none':'block';
     $('#'+idDiv).innerHTML=tops.map(t=>`<div class="bar-row"><div class="nm" title="${esc(t.name)}">${esc(t.name)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(t.v/max*100)}%;background:${color}"></div></div><div class="v">${t.v}</div></div>`).join('');
