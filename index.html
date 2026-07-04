@@ -119,15 +119,14 @@
   .filterbar input{max-width:280px}.filterbar select{max-width:180px}
   .filebtns{display:flex;flex-direction:row;gap:6px;align-items:center;flex-shrink:0}
 
-  /* filtro de fecha */
-  .datefilter{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:10px 12px;background:var(--panel);border:1px solid var(--linea);border-radius:10px}
-  .datefilter .df-label{font-size:12px;font-weight:700;color:var(--tenue);text-transform:uppercase;letter-spacing:.4px;margin-right:2px}
-  .df-chip{font-family:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border:1px solid var(--linea2);border-radius:20px;background:#fff;color:var(--tinta);cursor:pointer;transition:.12s}
-  .df-chip:hover{border-color:var(--azul)}
-  .df-chip.on{background:var(--azul);color:#fff;border-color:var(--azul)}
-  .df-range{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-  .df-range input[type=date]{font-family:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--linea2);border-radius:7px;color:var(--tinta)}
-  .df-range span{font-size:12px;color:var(--tenue)}
+  /* filtro de fecha (solo desde-hasta) */
+  .datefilter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:12px 14px;background:var(--panel);border:1px solid var(--linea);border-radius:10px}
+  .datefilter .df-label{font-size:12px;font-weight:700;color:var(--tenue);text-transform:uppercase;letter-spacing:.4px}
+  .df-range{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .df-range input[type=date]{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--linea2);border-radius:7px;color:var(--tinta);background:#fff}
+  .df-range span{font-size:13px;color:var(--tenue);font-weight:600}
+  .df-clear{font-family:inherit;font-size:12.5px;font-weight:600;padding:7px 14px;border:1px solid var(--linea2);border-radius:7px;background:#fff;color:var(--tinta);cursor:pointer}
+  .df-clear:hover{border-color:var(--azul);color:var(--azul-d)}
   .df-info{font-size:12px;color:var(--azul-d);font-weight:600;margin-left:auto}
   .spacer{flex:1}
 
@@ -450,13 +449,10 @@
         <div class="sec-title">Hoja de movimientos</div>
         <div class="datefilter">
           <span class="df-label">Fecha:</span>
-          <button class="df-chip on" data-df="mov" data-p="all">Todo</button>
-          <button class="df-chip" data-df="mov" data-p="today">Hoy</button>
-          <button class="df-chip" data-df="mov" data-p="month">Este mes</button>
-          <button class="df-chip" data-df="mov" data-p="year">Este año</button>
           <div class="df-range">
             <span>Desde</span><input type="date" id="mov-from">
             <span>hasta</span><input type="date" id="mov-to">
+            <button class="df-clear" data-df="mov" type="button">Limpiar</button>
           </div>
           <span class="df-info" id="mov-df-info"></span>
         </div>
@@ -491,13 +487,10 @@
         <div class="sec-title">Estadísticas por producto</div>
         <div class="datefilter">
           <span class="df-label">Fecha:</span>
-          <button class="df-chip on" data-df="est" data-p="all">Todo</button>
-          <button class="df-chip" data-df="est" data-p="today">Hoy</button>
-          <button class="df-chip" data-df="est" data-p="month">Este mes</button>
-          <button class="df-chip" data-df="est" data-p="year">Este año</button>
           <div class="df-range">
             <span>Desde</span><input type="date" id="est-from">
             <span>hasta</span><input type="date" id="est-to">
+            <button class="df-clear" data-df="est" type="button">Limpiar</button>
           </div>
           <span class="df-info" id="est-df-info"></span>
         </div>
@@ -623,13 +616,10 @@
       <section class="panel-sec on" id="dashboard">
         <div class="datefilter">
           <span class="df-label">Fecha:</span>
-          <button class="df-chip on" data-df="dash" data-p="all">Todo</button>
-          <button class="df-chip" data-df="dash" data-p="today">Hoy</button>
-          <button class="df-chip" data-df="dash" data-p="month">Este mes</button>
-          <button class="df-chip" data-df="dash" data-p="year">Este año</button>
           <div class="df-range">
             <span>Desde</span><input type="date" id="dash-from">
             <span>hasta</span><input type="date" id="dash-to">
+            <button class="df-clear" data-df="dash" type="button">Limpiar</button>
           </div>
           <span class="df-info" id="dash-df-info"></span>
         </div>
@@ -883,33 +873,15 @@ function closeSide(){$('#side').classList.remove('open');$('#backdrop').classLis
 $('#menu-btn').onclick=openSide;$('#backdrop').onclick=closeSide;
 
 /* ====== RENDER ====== */
-/* ====== FILTROS DE FECHA (independientes por sección) ====== */
-const dateFilters={mov:{preset:'all',from:null,to:null},est:{preset:'all',from:null,to:null},dash:{preset:'all',from:null,to:null}};
+/* ====== FILTROS DE FECHA (solo desde-hasta, independientes por sección) ====== */
+const dateFilters={mov:{from:null,to:null},est:{from:null,to:null},dash:{from:null,to:null}};
 
 // límites [inicio, fin] en milisegundos según el filtro de una sección
 function rangoDe(sec){
   const f=dateFilters[sec];
-  const now=new Date();
-  if(f.preset==='today'){
-    const a=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
-    return [a,a+86400000-1];
-  }
-  if(f.preset==='month'){
-    const a=new Date(now.getFullYear(),now.getMonth(),1).getTime();
-    const b=new Date(now.getFullYear(),now.getMonth()+1,1).getTime()-1;
-    return [a,b];
-  }
-  if(f.preset==='year'){
-    const a=new Date(now.getFullYear(),0,1).getTime();
-    const b=new Date(now.getFullYear()+1,0,1).getTime()-1;
-    return [a,b];
-  }
-  if(f.preset==='range'){
-    const a=f.from?new Date(f.from+'T00:00:00').getTime():-Infinity;
-    const b=f.to?new Date(f.to+'T23:59:59').getTime():Infinity;
-    return [a,b];
-  }
-  return [-Infinity,Infinity]; // 'all'
+  const a=f.from?new Date(f.from+'T00:00:00').getTime():-Infinity;
+  const b=f.to?new Date(f.to+'T23:59:59').getTime():Infinity;
+  return [a,b];
 }
 // ¿este movimiento entra en el filtro de la sección?
 function enRango(m,sec){
@@ -922,43 +894,31 @@ function movsFiltrados(sec){return movimientos.filter(m=>enRango(m,sec));}
 // texto informativo del período activo
 function textoPeriodo(sec){
   const f=dateFilters[sec];
-  if(f.preset==='all')return '';
-  if(f.preset==='today')return 'Solo hoy';
-  if(f.preset==='month')return 'Este mes';
-  if(f.preset==='year')return 'Este año';
-  if(f.preset==='range'){
-    const d=s=>s?s.split('-').reverse().join('/'):'…';
-    return `${d(f.from)} — ${d(f.to)}`;
-  }
-  return '';
+  if(!f.from&&!f.to)return '';
+  const d=s=>s?s.split('-').reverse().join('/'):'…';
+  return `${d(f.from)} — ${d(f.to)}`;
 }
 // stats de un producto respetando el filtro de la sección
 function statsOfF(code,sec){let ent=0,sal=0,mer=0;movsFiltrados(sec).filter(m=>m.code===code).forEach(m=>{if(m.type==='in')ent+=m.qty;else if(m.type==='out')sal+=m.qty;else mer+=m.qty;});return{ent,sal,mer};}
 
 // conectar los controles del filtro
 function initDateFilters(){
-  $$('.df-chip').forEach(chip=>{
-    chip.onclick=()=>{
-      const sec=chip.dataset.df,preset=chip.dataset.p;
-      dateFilters[sec].preset=preset;
-      // marcar el chip activo dentro de su sección
-      $$(`.df-chip[data-df="${sec}"]`).forEach(c=>c.classList.toggle('on',c===chip));
-      // limpiar rango si eligió un preset
+  ['mov','est','dash'].forEach(sec=>{
+    const from=$('#'+sec+'-from'),to=$('#'+sec+'-to');
+    const onRange=()=>{
+      dateFilters[sec].from=from.value||null;
+      dateFilters[sec].to=to.value||null;
+      render();
+    };
+    from.onchange=onRange;to.onchange=onRange;
+  });
+  $$('.df-clear').forEach(btn=>{
+    btn.onclick=()=>{
+      const sec=btn.dataset.df;
       $('#'+sec+'-from').value='';$('#'+sec+'-to').value='';
       dateFilters[sec].from=null;dateFilters[sec].to=null;
       render();
     };
-  });
-  ['mov','est','dash'].forEach(sec=>{
-    const from=$('#'+sec+'-from'),to=$('#'+sec+'-to');
-    const onRange=()=>{
-      dateFilters[sec].preset='range';
-      dateFilters[sec].from=from.value||null;
-      dateFilters[sec].to=to.value||null;
-      $$(`.df-chip[data-df="${sec}"]`).forEach(c=>c.classList.remove('on'));
-      render();
-    };
-    from.onchange=onRange;to.onchange=onRange;
   });
 }
 
