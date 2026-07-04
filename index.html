@@ -475,7 +475,9 @@
           <div class="kpi alert"><div class="n" id="k-low">0</div><div class="l">Productos en stock bajo</div></div>
         </div>
         <div class="dash-grid">
-          <div class="card" style="margin:0"><h3>Más movidos (salidas)</h3><div id="dash-top"></div><div class="empty" id="dash-top-empty" style="padding:24px"><div class="big">Sin salidas aún</div></div></div>
+          <div class="card" style="margin:0"><h3>Más salidas</h3><div id="dash-top-sal"></div><div class="empty" id="dash-top-sal-empty" style="padding:24px"><div class="big">Sin salidas aún</div></div></div>
+          <div class="card" style="margin:0"><h3>Más entradas</h3><div id="dash-top-ent"></div><div class="empty" id="dash-top-ent-empty" style="padding:24px"><div class="big">Sin entradas aún</div></div></div>
+          <div class="card" style="margin:0"><h3>Más mermas</h3><div id="dash-top-mer"></div><div class="empty" id="dash-top-mer-empty" style="padding:24px"><div class="big">Sin mermas aún</div></div></div>
           <div class="card" style="margin:0"><h3>Reparto por tipo de movimiento</h3><div id="dash-types"></div><div class="empty" id="dash-types-empty" style="padding:24px"><div class="big">Sin movimientos</div></div></div>
         </div>
         <div class="sec-title">⚠ Alertas de stock bajo</div>
@@ -774,10 +776,16 @@ function renderDash(){
   const totVal=productos.reduce((a,p)=>a+stockOf(p.code)*(p.price||0),0);
   const low=productos.filter(p=>stockOf(p.code)<=(p.min||0));
   $('#k-val').textContent=money(totVal);$('#k-prod').textContent=productos.length;$('#k-stock').textContent=totStock;$('#k-mov').textContent=movimientos.length;$('#k-low').textContent=low.length;
-  const tops=productos.map(p=>({name:p.name,v:statsOf(p.code).sal})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,6);
-  const max=Math.max(...tops.map(t=>t.v),1);
-  $('#dash-top-empty').style.display=tops.length?'none':'block';
-  $('#dash-top').innerHTML=tops.map(t=>`<div class="bar-row"><div class="nm" title="${esc(t.name)}">${esc(t.name)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(t.v/max*100)}%;background:var(--rojo)"></div></div><div class="v">${t.v}</div></div>`).join('');
+  // Tres rankings: salidas, entradas y mermas (top 6 cada uno)
+  function pintarTop(campo,idDiv,idEmpty,color){
+    const tops=productos.map(p=>({name:p.name,v:statsOf(p.code)[campo]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,6);
+    const max=Math.max(...tops.map(t=>t.v),1);
+    $('#'+idEmpty).style.display=tops.length?'none':'block';
+    $('#'+idDiv).innerHTML=tops.map(t=>`<div class="bar-row"><div class="nm" title="${esc(t.name)}">${esc(t.name)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(t.v/max*100)}%;background:${color}"></div></div><div class="v">${t.v}</div></div>`).join('');
+  }
+  pintarTop('sal','dash-top-sal','dash-top-sal-empty','var(--rojo)');
+  pintarTop('ent','dash-top-ent','dash-top-ent-empty','var(--verde)');
+  pintarTop('mer','dash-top-mer','dash-top-mer-empty','var(--ambar)');
   const cnt={in:0,out:0,merma:0};movimientos.forEach(m=>cnt[m.type]+=m.qty);const tot=cnt.in+cnt.out+cnt.merma;
   $('#dash-types-empty').style.display=tot?'none':'block';
   const cmap={in:['Entradas','var(--verde)'],out:['Salidas','var(--rojo)'],merma:['Mermas','var(--ambar)']};
