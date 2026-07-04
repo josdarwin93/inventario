@@ -208,6 +208,11 @@
   .bc-canvas-wrap svg{max-width:100%;height:auto}
   .bc-actions{display:flex;gap:10px;margin-top:18px}
   .bc-actions .btn{flex:1}
+
+  /* botones de exportar con ícono de archivo (PDF/XLS/CSV) */
+  .btn-file{background:none;border:none;cursor:pointer;padding:4px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;transition:transform .1s,background .15s}
+  .btn-file:hover{background:var(--bg);transform:translateY(-1px)}
+  .btn-file svg{width:34px;height:40px;display:block}
   @media(max-width:860px){
     .side{position:fixed;left:-220px;z-index:50;transition:.25s;box-shadow:4px 0 24px rgba(0,0,0,.2)}
     .side.open{left:0}.menu-btn{display:block}
@@ -333,9 +338,15 @@
           <input id="inv-search" placeholder="Buscar por nombre o código…">
           <select id="inv-cat"><option value="">Todas las categorías</option></select>
           <div class="spacer"></div>
-          <button class="btn ghost sm" id="btn-pdf-inv">⬇ PDF</button>
-          <button class="btn ghost sm" id="btn-export-inv-xls">⬇ Excel</button>
-          <button class="btn ghost sm" id="btn-export-inv">CSV</button>
+          <button class="btn-file" id="btn-pdf-inv" title="Descargar PDF" aria-label="Descargar PDF">
+            <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="36" width="30" height="16" rx="2" fill="#e2231a"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">PDF</text></svg>
+          </button>
+          <button class="btn-file" id="btn-export-inv-xls" title="Descargar Excel" aria-label="Descargar Excel">
+            <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><g stroke="#21a366" stroke-width="2.5"><line x1="9" y1="22" x2="29" y2="22"/><line x1="9" y1="28" x2="29" y2="28"/><line x1="19" y1="18" x2="19" y2="32"/></g><rect x="4" y="36" width="30" height="16" rx="2" fill="#21a366"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">XLS</text></svg>
+          </button>
+          <button class="btn-file" id="btn-export-inv" title="Descargar CSV" aria-label="Descargar CSV">
+            <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="36" width="30" height="16" rx="2" fill="#2f6fed"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">CSV</text></svg>
+          </button>
         </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-inv">
@@ -410,9 +421,15 @@
           <select id="mov-type"><option value="">Todos los tipos</option><option value="in">Entradas</option><option value="out">Salidas</option><option value="merma">Mermas</option></select>
           <div class="spacer"></div>
           <button class="btn danger sm" id="btn-clear-mov">🗑 Eliminar todo</button>
-          <button class="btn ghost sm" id="btn-pdf-mov">⬇ PDF</button>
-          <button class="btn ghost sm" id="btn-export-mov-xls">⬇ Excel</button>
-          <button class="btn ghost sm" id="btn-export-mov">CSV</button>
+          <button class="btn-file" id="btn-pdf-mov" title="Descargar PDF" aria-label="Descargar PDF">
+            <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="36" width="30" height="16" rx="2" fill="#e2231a"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">PDF</text></svg>
+          </button>
+          <button class="btn-file" id="btn-export-mov-xls" title="Descargar Excel" aria-label="Descargar Excel">
+            <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><g stroke="#21a366" stroke-width="2.5"><line x1="9" y1="22" x2="29" y2="22"/><line x1="9" y1="28" x2="29" y2="28"/><line x1="19" y1="18" x2="19" y2="32"/></g><rect x="4" y="36" width="30" height="16" rx="2" fill="#21a366"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">XLS</text></svg>
+          </button>
+          <button class="btn-file" id="btn-export-mov" title="Descargar CSV" aria-label="Descargar CSV">
+            <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="36" width="30" height="16" rx="2" fill="#2f6fed"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">CSV</text></svg>
+          </button>
         </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-mov">
@@ -429,9 +446,15 @@
         <div class="filterbar">
           <input id="est-search" placeholder="Buscar producto o código…">
           <div class="spacer"></div>
-          <button class="btn ghost sm" id="btn-pdf-est">⬇ PDF</button>
-          <button class="btn ghost sm" id="btn-export-est-xls">⬇ Excel</button>
-          <button class="btn ghost sm" id="btn-export-est">CSV</button>
+          <button class="btn-file" id="btn-pdf-est" title="Descargar PDF" aria-label="Descargar PDF">
+            <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="36" width="30" height="16" rx="2" fill="#e2231a"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">PDF</text></svg>
+          </button>
+          <button class="btn-file" id="btn-export-est-xls" title="Descargar Excel" aria-label="Descargar Excel">
+            <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><g stroke="#21a366" stroke-width="2.5"><line x1="9" y1="22" x2="29" y2="22"/><line x1="9" y1="28" x2="29" y2="28"/><line x1="19" y1="18" x2="19" y2="32"/></g><rect x="4" y="36" width="30" height="16" rx="2" fill="#21a366"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">XLS</text></svg>
+          </button>
+          <button class="btn-file" id="btn-export-est" title="Descargar CSV" aria-label="Descargar CSV">
+            <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="36" width="30" height="16" rx="2" fill="#2f6fed"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">CSV</text></svg>
+          </button>
         </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-est">
