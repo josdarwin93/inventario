@@ -703,7 +703,10 @@ const titles={inventario:['Inventario','Almacén · Existencias'],movimientos:['
 function goTab(tab){
   $$('.side nav button').forEach(x=>x.classList.toggle('on',x.dataset.tab===tab));
   $$('.panel-sec').forEach(x=>x.classList.toggle('on',x.id===tab));
-  $('#page-title').textContent=titles[tab][0];$('#page-crumb').textContent=titles[tab][1];closeSide();
+  $('#page-title').textContent=titles[tab][0];$('#page-crumb').textContent=titles[tab][1];
+  // el botón "Registrar movimiento" es un atajo: se oculta si ya estamos en Movimientos
+  $('#quick-mov').style.display=(tab==='movimientos')?'none':'';
+  closeSide();
 }
 $$('.side nav button').forEach(b=>b.onclick=()=>goTab(b.dataset.tab));
 $('#quick-mov').onclick=()=>goTab('movimientos');
