@@ -297,9 +297,7 @@
       <button data-tab="privacidad"><span class="ic">🔒</span>Política de privacidad</button>
     </nav>
     <div class="foot">
-      <span class="uemail" id="u-email">—</span>
       <div class="sync"><span class="db-dot" id="sync-dot"></span><span id="sync-text">Sincronizado</span></div>
-      <button id="btn-logout">Cerrar sesión</button>
     </div>
   </aside>
   <div class="backdrop" id="backdrop"></div>
@@ -686,7 +684,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail }
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, signInAnonymously }
   from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, onSnapshot, serverTimestamp, writeBatch }
   from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
@@ -710,6 +708,11 @@ const db=getFirestore(fbApp);
    locales, solo para ver el diseño. Los datos reales solo funcionan en producción. */
 const DOMINIO_REAL='josdarwin93.github.io';
 const MODO_PREVIEW=(location.hostname!==DOMINIO_REAL);
+
+/* ====== SIN LOGIN ======
+   La app entra directa (sin usuario ni contraseña) usando sesión anónima.
+   Todos los datos viven en una única ruta fija compartida (DATA_ID). */
+const DATA_ID='controlstock-principal';
 
 /* ====== ESTADO ====== */
 let user=null, productos=[], movimientos=[];
@@ -787,26 +790,23 @@ $('#auth-btn').onclick=async()=>{
   }catch(e){showAuthError(authMsg(e.code));b.disabled=false;setMode(mode);}
 };
 $('#auth-pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('#auth-btn').click();});
-$('#btn-logout').onclick=async()=>{if(await confirmar('¿Cerrar sesión?','Cerrar sesión'))signOut(auth);};
-
 if(MODO_PREVIEW){
   // Vista previa: mostramos la app con datos de ejemplo, sin nube ni login
   arrancarPreview();
 }else{
+  // SIN LOGIN: entramos directo con sesión anónima
   onAuthStateChanged(auth,u=>{
-    $('#boot').style.display='none';
     if(u){
       user=u;
+      $('#boot').style.display='none';
       $('#auth').style.display='none';$('#app-root').style.display='block';
-      $('#u-email').textContent=u.email;
       startListening();
     }else{
-      user=null;
-      if(unsubProd)unsubProd();if(unsubMov)unsubMov();
-      productos=[];movimientos=[];
-      $('#app-root').style.display='none';$('#auth').style.display='flex';
-      $('#auth-email').value='';$('#auth-pass').value='';setMode('login');
-      const b=$('#auth-btn');b.disabled=false;
+      // aún no hay sesión: iniciamos una anónima
+      signInAnonymously(auth).catch(e=>{
+        $('#boot').textContent='No se pudo conectar. Revisa tu conexión.';
+        console.error('Error de sesión anónima:',e);
+      });
     }
   });
 }
@@ -815,7 +815,6 @@ function arrancarPreview(){
   user={uid:'preview',email:'vista.previa@controlstock'};
   $('#boot').style.display='none';
   $('#auth').style.display='none';$('#app-root').style.display='block';
-  $('#u-email').textContent='Vista previa (sin nube)';
   setSync(false);$('#sync-text').textContent='Vista previa';
   // datos de ejemplo en memoria
   productos=[
@@ -835,8 +834,8 @@ function arrancarPreview(){
 
 
 /* ====== FIRESTORE: rutas y escucha en tiempo real ====== */
-function prodCol(){return collection(db,'negocios',user.uid,'productos');}
-function movCol(){return collection(db,'negocios',user.uid,'movimientos');}
+function prodCol(){return collection(db,'negocios',DATA_ID,'productos');}
+function movCol(){return collection(db,'negocios',DATA_ID,'movimientos');}
 function setSync(on){$('#sync-dot').classList.toggle('off',!on);$('#sync-text').textContent=on?'Sincronizado':'Sin conexión';}
 
 function startListening(){
@@ -1089,14 +1088,14 @@ $('#btn-addprod').onclick=async()=>{
       const p=prodOf(editCode);
       const datos={name,cat,pres,min,price,initial:p.initial||0,created:p.created||serverTimestamp(),photo:photoData||''};
       if(MODO_PREVIEW){Object.assign(p,datos);render();toast({kind:'ok',title:'Producto actualizado',msg:name});salirEdicion();return;}
-      await setDoc(doc(db,'negocios',user.uid,'productos',editCode),datos);
+      await setDoc(doc(db,'negocios',DATA_ID,'productos',editCode),datos);
       toast({kind:'ok',title:'Producto actualizado',msg:name});
       salirEdicion();
     }else{
       if(prodOf(code)){toast({kind:'err',msg:'Ya existe un producto con ese código'});return;}
       const initial=parseInt($('#p-stock').value)||0;
       if(MODO_PREVIEW){productos.push({code,name,cat,pres,initial,min,price,photo:photoData||'',created:Date.now()});clearProdForm();render();toast({kind:'ok',title:'Producto guardado',msg:`${name} (${code}) · stock inicial ${initial}`});return;}
-      await setDoc(doc(db,'negocios',user.uid,'productos',code),{name,cat,pres,initial,min,price,photo:photoData||'',created:serverTimestamp()});
+      await setDoc(doc(db,'negocios',DATA_ID,'productos',code),{name,cat,pres,initial,min,price,photo:photoData||'',created:serverTimestamp()});
       clearProdForm();
       toast({kind:'ok',title:'Producto guardado',msg:`${name} (${code}) · stock inicial ${initial}`});
       if(initial<=min)toast({kind:'warn',title:'Stock bajo',msg:`${name} inicia con ${initial}, por debajo del mínimo (${min})`,long:true});
@@ -1222,7 +1221,7 @@ async function confirmarImport(){
       while(pend.length){
         const lote=pend.splice(0,400);
         const batch=writeBatch(db);
-        lote.forEach(p=>batch.set(doc(db,'negocios',user.uid,'productos',p.code),{name:p.name,cat:p.cat,pres:p.pres,initial:p.initial,min:p.min,price:p.price,photo:'',created:serverTimestamp()}));
+        lote.forEach(p=>batch.set(doc(db,'negocios',DATA_ID,'productos',p.code),{name:p.name,cat:p.cat,pres:p.pres,initial:p.initial,min:p.min,price:p.price,photo:'',created:serverTimestamp()}));
         await batch.commit();
       }
     }
@@ -1268,7 +1267,7 @@ $('#btn-canceledit').onclick=salirEdicion;
 
 async function delProd(code){const p=prodOf(code);if(!(await confirmar('¿Eliminar "'+(p?p.name:code)+'"? Su historial se conserva.','Eliminar producto')))return;
   try{if(MODO_PREVIEW){productos=productos.filter(p=>p.code!==code);if(currentCode===code)hideCards();if(editCode===code)salirEdicion();render();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});return;}
-    await deleteDoc(doc(db,'negocios',user.uid,'productos',code));if(currentCode===code)hideCards();if(editCode===code)salirEdicion();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});}
+    await deleteDoc(doc(db,'negocios',DATA_ID,'productos',code));if(currentCode===code)hideCards();if(editCode===code)salirEdicion();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});}
   catch(e){toast({kind:'err',msg:e.message});}}
 
 /* --- eliminar todos los productos de la categoría elegida --- */
@@ -1292,7 +1291,7 @@ $('#btn-del-cat').onclick=async()=>{
     while(pend.length){
       const lote=pend.splice(0,400);
       const batch=writeBatch(db);
-      lote.forEach(p=>batch.delete(doc(db,'negocios',user.uid,'productos',p.code)));
+      lote.forEach(p=>batch.delete(doc(db,'negocios',DATA_ID,'productos',p.code)));
       await batch.commit();
     }
     hideCards();if(editCode&&delCat.some(p=>p.code===editCode))salirEdicion();
@@ -1307,7 +1306,7 @@ async function delMov(id){
   const nom=nameOf(m.code),signo=(m.type==='in'?'+':'−')+m.qty;
   if(!(await confirmar(`¿Eliminar este movimiento de "${nom}" (${signo})? El stock se recalculará.`,'Eliminar movimiento')))return;
   try{if(MODO_PREVIEW){movimientos=movimientos.filter(x=>x.id!==id);render();toast({kind:'info',icon:'🗑',msg:'Movimiento eliminado · stock recalculado'});return;}
-    await deleteDoc(doc(db,'negocios',user.uid,'movimientos',id));toast({kind:'info',icon:'🗑',msg:'Movimiento eliminado · stock recalculado'});}
+    await deleteDoc(doc(db,'negocios',DATA_ID,'movimientos',id));toast({kind:'info',icon:'🗑',msg:'Movimiento eliminado · stock recalculado'});}
   catch(e){toast({kind:'err',msg:e.message});}
 }
 $('#btn-clear-mov').onclick=async()=>{
@@ -1320,7 +1319,7 @@ $('#btn-clear-mov').onclick=async()=>{
     while(pendientes.length){
       const lote=pendientes.splice(0,400);
       const batch=writeBatch(db);
-      lote.forEach(m=>batch.delete(doc(db,'negocios',user.uid,'movimientos',m.id)));
+      lote.forEach(m=>batch.delete(doc(db,'negocios',DATA_ID,'movimientos',m.id)));
       await batch.commit();
     }
     toast({kind:'ok',icon:'🗑',msg:'Historial de movimientos eliminado'});
