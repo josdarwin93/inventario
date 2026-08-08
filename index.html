@@ -971,6 +971,18 @@ function renderInv(){
   tb.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editProd(b.dataset.edit));
   tb.querySelectorAll('[data-bc]').forEach(b=>b.onclick=()=>mostrarCodigoBarras(b.dataset.bc));
 }
+// devuelve los productos aplicando los filtros activos (buscador, categoría, nombre)
+function invFiltrado(){
+  const q=($('#inv-search').value||'').toLowerCase();
+  const catSel=$('#inv-cat').value;
+  const nameSel=$('#inv-name').value;
+  return productos.filter(p=>{
+    const okText=p.name.toLowerCase().includes(q)||p.code.toLowerCase().includes(q);
+    const okCat=!catSel||(p.cat||'').trim()===catSel;
+    const okName=!nameSel||p.name===nameSel;
+    return okText&&okCat&&okName;
+  }).sort((a,b)=>a.name.localeCompare(b.name));
+}
 function renderMov(){
   const q=($('#mov-search').value||'').toLowerCase(),tf=$('#mov-type').value;
   const running={};const rows=movimientos.map(m=>{const base=(prodOf(m.code)||{}).initial||0;if(running[m.code]===undefined)running[m.code]=base;running[m.code]+=(m.type==='in'?m.qty:-m.qty);return{...m,result:running[m.code]};});
@@ -1531,7 +1543,7 @@ $('#cam-select').onchange=()=>{camIndex=parseInt($('#cam-select').value)||0;if(s
 function downloadCSV(fn,rows){const csv=rows.map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;a.click();toast({kind:'ok',icon:'⬇',msg:'Archivo exportado'});}
 $('#btn-export-inv').onclick=()=>{const r=[['Codigo','Nombre','Categoria','Cantidad','Presentacion','Stock Minimo','Precio (USD)','Ultima Actualizacion']];
-  productos.forEach(p=>{const lu=lastUpdate(p.code);r.push([p.code,p.name,p.cat,stockOf(p.code),p.pres,p.min||0,(p.price||0).toFixed(2),lu?dPart(lu):'']);});downloadCSV('inventario.csv',r);};
+  invFiltrado().forEach(p=>{const lu=lastUpdate(p.code);r.push([p.code,p.name,p.cat,stockOf(p.code),p.pres,p.min||0,(p.price||0).toFixed(2),lu?dPart(lu):'']);});downloadCSV('inventario.csv',r);};
 $('#btn-export-mov').onclick=()=>{const r=[['Fecha','Hora','Codigo','Nombre','Tipo','Cantidad','Usuario','Stock Resultante','Motivo']];
   const running={};movimientos.forEach(m=>{const base=(prodOf(m.code)||{}).initial||0;if(running[m.code]===undefined)running[m.code]=base;running[m.code]+=(m.type==='in'?m.qty:-m.qty);
     r.push([dPart(m.ts),hPart(m.ts),m.code,nameOf(m.code),typeName[m.type],m.qty,m.user||'',running[m.code],m.reason||'']);});downloadCSV('movimientos.csv',r);};
@@ -1575,7 +1587,7 @@ function exportXLSX(filenameBase,sheetName,headers,rows,anchos,moneyCols){
 
 $('#btn-export-inv-xls').onclick=()=>{
   const headers=['Código','Nombre','Categoría','Cantidad','Presentación','Stock Mínimo','Precio (USD)','Última Actualización'];
-  const rows=productos.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(p=>{
+  const rows=invFiltrado().map(p=>{
     const lu=lastUpdate(p.code);
     return [p.code,p.name,p.cat||'',stockOf(p.code),p.pres||'',p.min||0,Number((p.price||0).toFixed(2)),lu?dPart(lu):''];
   });
@@ -1632,15 +1644,18 @@ const VIOLETA=[109,74,255], ALTERNA=[246,246,251], ROJOSUAVE=[253,243,243];
 $('#btn-pdf-inv').onclick=()=>{
   const base=pdfBase('Reporte de Inventario');if(!base){toast({kind:'err',msg:'Librería PDF no disponible. Revisa tu conexión.'});return;}
   const {docp,ahora}=base;
-  const totProd=productos.length,totUnid=productos.reduce((a,p)=>a+stockOf(p.code),0);
-  const totVal=productos.reduce((a,p)=>a+stockOf(p.code)*(p.price||0),0);
-  const bajos=productos.filter(p=>stockOf(p.code)<=(p.min||0)).length;
+  const lista=invFiltrado();
+  const catSel=$('#inv-cat').value;
+  const totProd=lista.length,totUnid=lista.reduce((a,p)=>a+stockOf(p.code),0);
+  const totVal=lista.reduce((a,p)=>a+stockOf(p.code)*(p.price||0),0);
+  const bajos=lista.filter(p=>stockOf(p.code)<=(p.min||0)).length;
   docp.setTextColor(60,60,75);docp.setFontSize(10);let y=96;
   docp.setFont('helvetica','bold');docp.text('Resumen',40,y);docp.setFont('helvetica','normal');y+=16;
+  if(catSel){docp.text(`Categoría: ${catSel}`,40,y);y+=14;}
   docp.text(`Productos: ${totProd}`,40,y);docp.text(`Unidades en stock: ${totUnid}`,180,y);y+=14;
   docp.text(`Valor del inventario: $${totVal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`,40,y);
   docp.text(`Productos en stock bajo: ${bajos}`,300,y);
-  const ordenados=productos.slice().sort((a,b)=>a.name.localeCompare(b.name));
+  const ordenados=lista;
   const body=ordenados.map(p=>{const st=stockOf(p.code);return [p.code,p.name,p.cat||'',String(st),p.pres||'',String(p.min||0),'$'+(p.price||0).toFixed(2)];});
   docp.autoTable({startY:y+18,head:[['Código','Nombre','Categoría','Cant.','Present.','Mín.','Precio']],body,
     styles:{fontSize:8,cellPadding:4},headStyles:{fillColor:VIOLETA,textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:ALTERNA},
