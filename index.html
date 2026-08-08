@@ -361,6 +361,17 @@
             <button class="btn ghost" id="btn-canceledit" style="display:none">Cancelar edición</button>
           </div>
         </div>
+
+        <div class="card" style="border:1px dashed var(--linea2)">
+          <h3>📥 Importar productos desde Excel o CSV</h3>
+          <p style="font-size:13px;color:var(--tenue);margin-bottom:12px">Sube un archivo con tus productos y se cargarán todos de una vez. La primera fila debe tener los encabezados. Se reconocen las columnas: <b>Código</b>, <b>Nombre</b>, <b>Cantidad</b>, <b>Categoría</b>, <b>Presentación</b>, <b>Stock mínimo</b> y <b>Precio</b>.</p>
+          <input id="import-file" type="file" accept=".xlsx,.xls,.csv" style="display:none">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button class="btn" id="btn-import">Elegir archivo</button>
+            <span id="import-status" style="font-size:13px;color:var(--tenue)"></span>
+          </div>
+          <div id="import-preview" style="display:none;margin-top:14px"></div>
+        </div>
         <div class="sec-title">Hoja de inventario</div>
         <div class="filterbar">
           <input id="inv-search" placeholder="Buscar por nombre o código…">
@@ -1083,6 +1094,133 @@ $('#btn-addprod').onclick=async()=>{
 };
 function clearProdForm(){['p-code','p-name','p-cat','p-pres'].forEach(i=>$('#'+i).value='');$('#p-stock').value=0;$('#p-min').value=5;$('#p-price').value='0.00';photoData='';$('#p-photo-cam').value='';$('#p-photo-gal').value='';$('#photo-menu').style.display='none';mostrarFoto('');}
 $('#btn-clearprod').onclick=()=>{if(editCode)salirEdicion();else clearProdForm();};
+
+/* ====== IMPORTAR PRODUCTOS DESDE EXCEL / CSV ====== */
+let importados=[]; // productos leídos del archivo, listos para guardar
+$('#btn-import').onclick=()=>$('#import-file').click();
+$('#import-file').onchange=e=>{
+  const file=e.target.files[0];if(!file)return;
+  if(!window.XLSX){toast({kind:'err',msg:'Librería de Excel no disponible. Revisa tu conexión.'});return;}
+  $('#import-status').textContent='Leyendo archivo…';
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const filas=XLSX.utils.sheet_to_json(ws,{header:1,defval:''}); // matriz de filas
+      procesarFilas(filas);
+    }catch(err){
+      $('#import-status').textContent='';
+      toast({kind:'err',title:'No se pudo leer el archivo',msg:err.message,long:true});
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+// reconoce a qué campo corresponde cada encabezado (flexible con acentos/mayúsculas)
+function detectarColumnas(encabezados){
+  const norm=s=>s.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const map={};
+  encabezados.forEach((h,i)=>{
+    const n=norm(h);
+    if(/(codigo|cod|referencia|barra|sku)/.test(n)&&map.code===undefined)map.code=i;
+    else if(/(nombre|producto|descripcion|observacion|articulo|item)/.test(n)&&map.name===undefined)map.name=i;
+    else if(/(cantidad|stock inicial|existencia|unidades|cant)/.test(n)&&map.qty===undefined)map.qty=i;
+    else if(/(categoria|tipo|grupo|familia)/.test(n)&&map.cat===undefined)map.cat=i;
+    else if(/(presentacion|unidad|medida|empaque)/.test(n)&&map.pres===undefined)map.pres=i;
+    else if(/(minimo|min|reorden)/.test(n)&&map.min===undefined)map.min=i;
+    else if(/(precio|costo|valor|pvp)/.test(n)&&map.price===undefined)map.price=i;
+  });
+  return map;
+}
+
+function procesarFilas(filas){
+  // buscar la fila de encabezados: la primera que contenga algo como "codigo" y "nombre/observacion"
+  let hIdx=-1,cols=null;
+  for(let i=0;i<Math.min(filas.length,15);i++){
+    const m=detectarColumnas(filas[i]);
+    if(m.code!==undefined&&(m.name!==undefined||m.qty!==undefined)){hIdx=i;cols=m;break;}
+  }
+  if(hIdx<0){
+    $('#import-status').textContent='';
+    toast({kind:'err',title:'No reconocí las columnas',msg:'Asegúrate de que el archivo tenga una fila de encabezados con al menos Código y Nombre.',long:true});
+    return;
+  }
+  importados=[];
+  const vistos=new Set(productos.map(p=>p.code));
+  let dup=0,vac=0;
+  for(let i=hIdx+1;i<filas.length;i++){
+    const f=filas[i];
+    const code=(f[cols.code]??'').toString().trim();
+    const name=cols.name!==undefined?(f[cols.name]??'').toString().trim():'';
+    if(!code||/^total/i.test(code)){vac++;continue;}
+    if(vistos.has(code)){dup++;continue;}
+    vistos.add(code);
+    const num=(v,d)=>{const n=parseFloat((v??'').toString().replace(',','.'));return isNaN(n)?d:n;};
+    importados.push({
+      code,
+      name:name||code,
+      initial:Math.round(num(cols.qty!==undefined?f[cols.qty]:0,0)),
+      cat:cols.cat!==undefined?(f[cols.cat]??'').toString().trim():'',
+      pres:cols.pres!==undefined?(f[cols.pres]??'').toString().trim():'',
+      min:Math.round(num(cols.min!==undefined?f[cols.min]:5,5)),
+      price:num(cols.price!==undefined?f[cols.price]:0,0)
+    });
+  }
+  // vista previa
+  const prev=$('#import-preview');
+  if(!importados.length){
+    $('#import-status').textContent='';
+    prev.style.display='none';
+    toast({kind:'warn',title:'Nada para importar',msg:`No hay productos nuevos. ${dup?dup+' ya existían.':''}`,long:true});
+    return;
+  }
+  $('#import-status').textContent=`${importados.length} productos listos para importar${dup?' · '+dup+' ya existían (omitidos)':''}`;
+  const muestra=importados.slice(0,8);
+  prev.innerHTML=`
+    <div style="overflow:auto;border:1px solid var(--linea);border-radius:8px">
+      <table style="width:100%;font-size:12.5px">
+        <thead><tr><th>Código</th><th>Nombre</th><th class="r">Cant.</th><th>Categoría</th><th class="r">Precio</th></tr></thead>
+        <tbody>${muestra.map(p=>`<tr><td class="mono">${esc(p.code)}</td><td>${esc(p.name)}</td><td class="r">${p.initial}</td><td>${esc(p.cat||'—')}</td><td class="r">${money(p.price)}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+    ${importados.length>8?`<div style="font-size:12px;color:var(--tenue);margin-top:6px">…y ${importados.length-8} más</div>`:''}
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+      <button class="btn" id="btn-import-confirm">✓ Importar ${importados.length} productos</button>
+      <button class="btn ghost" id="btn-import-cancel">Cancelar</button>
+    </div>`;
+  prev.style.display='block';
+  $('#btn-import-confirm').onclick=confirmarImport;
+  $('#btn-import-cancel').onclick=()=>{importados=[];prev.style.display='none';$('#import-status').textContent='';$('#import-file').value='';};
+}
+
+async function confirmarImport(){
+  if(!importados.length)return;
+  const btn=$('#btn-import-confirm');btn.disabled=true;btn.textContent='Importando…';
+  try{
+    if(MODO_PREVIEW){
+      importados.forEach(p=>productos.push({...p,photo:'',created:Date.now()}));
+      render();
+    }else{
+      // guardar en lotes con writeBatch (máx 500 por lote)
+      let pend=importados.slice();
+      while(pend.length){
+        const lote=pend.splice(0,400);
+        const batch=writeBatch(db);
+        lote.forEach(p=>batch.set(doc(db,'negocios',user.uid,'productos',p.code),{name:p.name,cat:p.cat,pres:p.pres,initial:p.initial,min:p.min,price:p.price,photo:'',created:serverTimestamp()}));
+        await batch.commit();
+      }
+    }
+    const n=importados.length;
+    importados=[];
+    $('#import-preview').style.display='none';$('#import-status').textContent='';$('#import-file').value='';
+    toast({kind:'ok',title:'Importación completa',msg:`Se agregaron ${n} productos`,long:true});
+  }catch(e){
+    toast({kind:'err',title:'Error al importar',msg:e.message,long:true});
+    btn.disabled=false;btn.textContent='✓ Reintentar';
+  }
+}
+
 
 /* --- entrar / salir del modo edición --- */
 function editProd(code){
