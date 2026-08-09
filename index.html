@@ -96,10 +96,10 @@
   .tablecard{background:var(--panel);border:1px solid var(--linea);border-radius:10px;overflow:hidden;margin-bottom:22px}
   .tablescroll{overflow-x:auto}
   table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}
-  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--tenue);background:var(--bg);font-weight:700;padding:11px 14px;border-bottom:1px solid var(--linea)}
-  th.r{text-align:right}
-  td{padding:11px 14px;border-bottom:1px solid var(--linea)}
-  td.r{text-align:right}
+  th{text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--tenue);background:var(--bg);font-weight:700;padding:10px 8px;border-bottom:1px solid var(--linea)}
+  th.r{text-align:center}
+  td{padding:10px 8px;border-bottom:1px solid var(--linea);text-align:center}
+  td.r{text-align:center}
   tbody tr:last-child td{border-bottom:none}
   tbody tr:hover{background:#f8fafc}
   .mono{font-family:'SF Mono',Consolas,monospace;font-size:12.5px}
@@ -434,7 +434,6 @@
           <select id="inv-cat"><option value="">Todas las categorías</option></select>
           <select id="inv-subcat"><option value="">Todas las subcategorías</option></select>
           <select id="inv-name"><option value="">Todos los productos</option></select>
-          <button class="btn danger sm" id="btn-del-cat" style="display:none">🗑 Eliminar categoría</button>
           <div class="spacer"></div>
           <div class="filebtns">
           <button class="btn-file" id="btn-pdf-inv" title="Descargar PDF" aria-label="Descargar PDF">
@@ -1099,7 +1098,6 @@ function renderInv(){
   const subSel=$('#inv-subcat').value;
   const nameSel=$('#inv-name').value;
   // el botón de eliminar categoría solo aparece si hay una categoría elegida
-  $('#btn-del-cat').style.display=catSel?'':'none';
   // rellenar el desplegable de categorías (conservando la selección actual)
   const cats=[...new Set(productos.map(p=>(p.cat||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   const selCat=$('#inv-cat');
@@ -1482,34 +1480,6 @@ async function delProd(code){const p=prodOf(code);if(!(await confirmar('¿Elimin
   catch(e){toast({kind:'err',msg:e.message});}}
 
 /* --- eliminar todos los productos de la categoría elegida --- */
-$('#btn-del-cat').onclick=async()=>{
-  const cat=$('#inv-cat').value;
-  if(!cat)return;
-  const delCat=productos.filter(p=>(p.cat||'').trim()===cat);
-  if(!delCat.length){toast({kind:'info',msg:'No hay productos en esa categoría'});return;}
-  if(!(await confirmar(`Se eliminarán los ${delCat.length} productos de la categoría "${cat}". El historial de movimientos se conserva, pero los productos desaparecen del inventario. Esta acción no se puede deshacer. ¿Continuar?`,'Eliminar categoría completa')))return;
-  try{
-    if(MODO_PREVIEW){
-      const codigos=new Set(delCat.map(p=>p.code));
-      productos=productos.filter(p=>!codigos.has(p.code));
-      hideCards();if(editCode&&codigos.has(editCode))salirEdicion();
-      $('#inv-cat').value='';$('#inv-name').value='';
-      render();
-      toast({kind:'ok',icon:'🗑',msg:`${delCat.length} productos eliminados de "${cat}"`,long:true});
-      return;
-    }
-    let pend=delCat.slice();
-    while(pend.length){
-      const lote=pend.splice(0,400);
-      const batch=writeBatch(db);
-      lote.forEach(p=>batch.delete(doc(db,'negocios',ROOT_ID,'empresas',DATA_ID,'productos',p.code)));
-      await batch.commit();
-    }
-    hideCards();if(editCode&&delCat.some(p=>p.code===editCode))salirEdicion();
-    $('#inv-cat').value='';$('#inv-name').value='';
-    toast({kind:'ok',icon:'🗑',msg:`${delCat.length} productos eliminados de "${cat}"`,long:true});
-  }catch(e){toast({kind:'err',title:'Error al eliminar',msg:e.message,long:true});}
-};
 
 /* ====== ELIMINAR MOVIMIENTOS ====== */
 async function delMov(id){
