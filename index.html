@@ -248,6 +248,25 @@
 
   /* LOGIN */
   #auth{display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px}
+
+  /* SELECCIÓN Y FORMULARIO DE EMPRESA */
+  #empresas-screen,#empresa-form-screen{display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px}
+  .emp-wrap{background:var(--panel);border:1px solid var(--linea);border-radius:14px;padding:32px 28px;width:100%;max-width:440px;box-shadow:0 10px 40px rgba(20,40,70,.1)}
+  .emp-wrap .brand{font-size:24px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:9px}
+  .emp-wrap .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--azul)}
+  .emp-sub{text-align:center;color:var(--tenue);font-size:13px;margin-bottom:20px}
+  .emp-card{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--linea);border-radius:10px;margin-bottom:10px;transition:.13s}
+  .emp-card:hover{border-color:var(--azul);background:var(--azul-bg)}
+  .emp-card .emp-logo{width:52px;height:52px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+  .emp-card .emp-logo img{max-width:100%;max-height:100%;object-fit:contain}
+  .emp-card .emp-logo .ini{font-size:22px;font-weight:800;color:var(--azul)}
+  .emp-card .emp-info{flex:1;min-width:0;cursor:pointer}
+  .emp-card .emp-info .nm{font-weight:700;font-size:15px;color:var(--tinta)}
+  .emp-card .emp-info .dt{font-size:12px;color:var(--tenue)}
+  .emp-card .emp-acts{display:flex;gap:6px;flex-shrink:0}
+  .emp-card .icon-btn{background:none;border:1px solid var(--linea2);border-radius:7px;padding:6px 9px;cursor:pointer;font-size:13px;color:var(--tenue)}
+  .emp-card .icon-btn:hover{border-color:var(--azul);color:var(--azul-d)}
+  .emp-empty{text-align:center;color:var(--tenue);font-size:13px;padding:20px}
   .authcard{background:var(--panel);border:1px solid var(--linea);border-radius:14px;padding:34px 30px;width:100%;max-width:400px;box-shadow:0 10px 40px rgba(20,40,70,.1)}
   .authcard .brand{font-size:24px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:9px;margin-bottom:4px}
   .authcard .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--azul)}
@@ -265,18 +284,37 @@
 <!-- ===================== PANTALLA DE CARGA INICIAL ===================== -->
 <div class="auth-loading" id="boot" style="display:block">Conectando con la nube…</div>
 
-<!-- ===================== LOGIN / REGISTRO ===================== -->
-<div id="auth" style="display:none">
-  <div class="authcard">
-    <div class="brand"><span class="dot"></span>ControlStock</div>
-    <h2 id="auth-title">Iniciar sesión</h2>
-    <div class="auth-err" id="auth-err"></div>
-    <div class="field"><label>Correo electrónico</label><input id="auth-email" type="email" placeholder="tucorreo@ejemplo.com" autocomplete="email"></div>
-    <div class="field"><label>Contraseña</label><input id="auth-pass" type="password" placeholder="Mínimo 6 caracteres" autocomplete="current-password"></div>
-    <button class="btn block" id="auth-btn">Entrar</button>
-    <div class="auth-switch" id="auth-switch-login">¿No tienes cuenta? <a id="go-register">Crea una aquí</a></div>
-    <div class="auth-switch" id="auth-switch-register" style="display:none">¿Ya tienes cuenta? <a id="go-login">Inicia sesión</a></div>
-    <div class="auth-switch" style="margin-top:10px"><a id="go-reset">Olvidé mi contraseña</a></div>
+<!-- ===================== SELECCIÓN DE EMPRESA ===================== -->
+<div id="empresas-screen" style="display:none">
+  <div class="emp-wrap">
+    <div class="brand" style="justify-content:center;margin-bottom:6px"><span class="dot"></span>ControlStock</div>
+    <p class="emp-sub">Elige una empresa para entrar</p>
+    <div id="emp-list"></div>
+    <button class="btn block" id="btn-nueva-emp" style="margin-top:14px">＋ Crear nueva empresa</button>
+  </div>
+</div>
+
+<!-- ===================== FORMULARIO DE EMPRESA ===================== -->
+<div id="empresa-form-screen" style="display:none">
+  <div class="emp-wrap">
+    <h2 id="empf-title" style="margin-bottom:16px">Nueva empresa</h2>
+    <div class="field"><label>Nombre de la empresa *</label><input id="empf-nombre" placeholder="Ej: Repuestos El Callao, C.A."></div>
+    <div class="field"><label>RIF</label><input id="empf-rif" placeholder="Ej: J-12345678-9"></div>
+    <div class="field"><label>Ubicación / Dirección</label><input id="empf-ubic" placeholder="Ej: Av. Principal, El Callao"></div>
+    <div class="field"><label>Teléfono</label><input id="empf-tel" placeholder="Ej: 0414-1234567"></div>
+    <div class="field">
+      <label>Logo</label>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div id="empf-logo-prev" style="width:70px;height:70px;border:1px dashed var(--linea2);border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--bg);overflow:hidden"><span style="font-size:10px;color:var(--tenue)">Sin logo</span></div>
+        <input id="empf-logo-file" type="file" accept="image/*" style="display:none">
+        <button class="btn ghost sm" id="btn-empf-logo">Subir logo</button>
+        <button class="btn ghost sm" id="btn-empf-logo-del" style="display:none">Quitar</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn" id="btn-empf-save">Guardar</button>
+      <button class="btn ghost" id="btn-empf-cancel">Cancelar</button>
+    </div>
   </div>
 </div>
 
@@ -297,7 +335,9 @@
       <button data-tab="privacidad"><span class="ic">🔒</span>Política de privacidad</button>
     </nav>
     <div class="foot">
+      <div style="font-size:12px;color:#dce6f2;font-weight:700;margin-bottom:2px">🏢 <span id="emp-activa-nombre">—</span></div>
       <div class="sync"><span class="db-dot" id="sync-dot"></span><span id="sync-text">Sincronizado</span></div>
+      <button id="btn-cambiar-emp" style="margin-top:8px;background:none;border:1px solid rgba(255,255,255,.2);color:#dce6f2;padding:7px 12px;border-radius:7px;cursor:pointer;font-family:inherit;font-size:12.5px;width:100%">↩ Cambiar de empresa</button>
     </div>
   </aside>
   <div class="backdrop" id="backdrop"></div>
@@ -343,8 +383,12 @@
                 <div class="field"><label>Nombre</label><input id="p-name" placeholder="Ej: Lápiz HB"></div>
               </div>
               <div class="row">
-                <div class="field"><label>Categoría</label><input id="p-cat" placeholder="Ej: Papelería"></div>
+                <div class="field"><label>Categoría</label><input id="p-cat" placeholder="Ej: Equipos y Repuestos"></div>
+                <div class="field"><label>Subcategoría</label><input id="p-subcat" placeholder="Ej: Yackles"></div>
+              </div>
+              <div class="row">
                 <div class="field"><label>Presentación</label><input id="p-pres" placeholder="Ej: Unidad, Caja"></div>
+                <div class="field"></div>
               </div>
               <div class="row3">
                 <div class="field"><label id="p-stock-label">Cantidad inicial</label><input id="p-stock" type="number" min="0" value="0"></div>
@@ -362,7 +406,7 @@
 
         <div class="card" style="border:1px dashed var(--linea2)">
           <h3>📥 Importar productos desde Excel o CSV</h3>
-          <p style="font-size:13px;color:var(--tenue);margin-bottom:12px">Sube un archivo con tus productos y se cargarán todos de una vez. La primera fila debe tener los encabezados. Se reconocen las columnas: <b>Código</b>, <b>Nombre</b>, <b>Cantidad</b>, <b>Categoría</b>, <b>Presentación</b>, <b>Stock mínimo</b> y <b>Precio</b>.</p>
+          <p style="font-size:13px;color:var(--tenue);margin-bottom:12px">Sube un archivo con tus productos y se cargarán todos de una vez. La primera fila debe tener los encabezados. Se reconocen las columnas: <b>Código</b>, <b>Nombre</b>, <b>Cantidad</b>, <b>Categoría</b>, <b>Subcategoría</b>, <b>Presentación</b>, <b>Stock mínimo</b> y <b>Precio</b>.</p>
           <input id="import-file" type="file" accept=".xlsx,.xls,.csv" style="display:none">
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
             <button class="btn" id="btn-import">Elegir archivo</button>
@@ -374,6 +418,7 @@
         <div class="filterbar">
           <input id="inv-search" placeholder="Buscar por nombre o código…">
           <select id="inv-cat"><option value="">Todas las categorías</option></select>
+          <select id="inv-subcat"><option value="">Todas las subcategorías</option></select>
           <select id="inv-name"><option value="">Todos los productos</option></select>
           <button class="btn danger sm" id="btn-del-cat" style="display:none">🗑 Eliminar categoría</button>
           <div class="spacer"></div>
@@ -391,7 +436,7 @@
         </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-inv">
-            <thead><tr><th></th><th>Código</th><th>Nombre</th><th>Categoría</th><th class="r">Cantidad</th><th>Presentación</th><th class="r">Stock Mínimo</th><th class="r">Precio (USD)</th><th>Última Actualización</th><th></th></tr></thead>
+            <thead><tr><th></th><th>Código</th><th>Nombre</th><th>Categoría</th><th>Subcategoría</th><th class="r">Cantidad</th><th>Presentación</th><th class="r">Stock Mínimo</th><th class="r">Precio (USD)</th><th>Última Actualización</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
           <div class="empty" id="empty-inv"><div class="big">Hoja vacía</div>Agrega tu primer producto con el formulario de arriba.</div>
@@ -709,10 +754,15 @@ const db=getFirestore(fbApp);
 const DOMINIO_REAL='josdarwin93.github.io';
 const MODO_PREVIEW=(location.hostname!==DOMINIO_REAL);
 
-/* ====== SIN LOGIN ======
-   La app entra directa (sin usuario ni contraseña) usando sesión anónima.
-   Todos los datos viven en una única ruta fija compartida (DATA_ID). */
-const DATA_ID='controlstock-principal';
+/* ====== MULTI-EMPRESA ======
+   La app entra directa (sin login). Al abrir, se elige una empresa.
+   Cada empresa tiene su propio espacio de datos (productos, movimientos, config).
+   ROOT_ID guarda la LISTA de empresas; DATA_ID apunta a la empresa activa. */
+const ROOT_ID='controlstock-principal';
+let DATA_ID=null;       // se asigna al elegir empresa
+let empresaActiva=null; // {id, nombre, rif, ubic, tel, logo}
+let empresasLista=[];   // todas las empresas guardadas
+let unsubEmpresas=null;
 
 /* ====== ESTADO ====== */
 let user=null, productos=[], movimientos=[];
@@ -751,58 +801,16 @@ function confirmar(mensaje,titulo){
 }
 
 /* ====== AUTENTICACIÓN ====== */
-let mode='login';
-function showAuthError(m){const e=$('#auth-err');e.textContent=m;e.style.display='block';}
-function clearAuthError(){$('#auth-err').style.display='none';}
-function setMode(m){
-  mode=m;clearAuthError();
-  $('#auth-title').textContent=m==='login'?'Iniciar sesión':'Crear cuenta';
-  $('#auth-btn').textContent=m==='login'?'Entrar':'Registrarme';
-  $('#auth-switch-login').style.display=m==='login'?'block':'none';
-  $('#auth-switch-register').style.display=m==='register'?'block':'none';
-  $('#auth-pass').setAttribute('autocomplete',m==='login'?'current-password':'new-password');
-}
-$('#go-register').onclick=()=>setMode('register');
-$('#go-login').onclick=()=>setMode('login');
-$('#go-reset').onclick=async()=>{
-  const email=$('#auth-email').value.trim();
-  if(!email){showAuthError('Escribe tu correo arriba y vuelve a pulsar.');return;}
-  try{await sendPasswordResetEmail(auth,email);toast({kind:'ok',title:'Correo enviado',msg:'Revisa tu bandeja para restablecer la contraseña',long:true});}
-  catch(e){showAuthError(authMsg(e.code));}
-};
-function authMsg(code){
-  const m={'auth/invalid-email':'El correo no es válido.','auth/missing-password':'Escribe una contraseña.',
-    'auth/weak-password':'La contraseña debe tener al menos 6 caracteres.','auth/email-already-in-use':'Ya existe una cuenta con ese correo. Inicia sesión.',
-    'auth/invalid-credential':'Correo o contraseña incorrectos.','auth/wrong-password':'Contraseña incorrecta.',
-    'auth/user-not-found':'No existe una cuenta con ese correo.','auth/too-many-requests':'Demasiados intentos. Espera un momento.',
-    'auth/network-request-failed':'Sin conexión. Revisa tu internet.'};
-  return m[code]||('Error: '+code);
-}
-$('#auth-btn').onclick=async()=>{
-  clearAuthError();
-  const email=$('#auth-email').value.trim(),pass=$('#auth-pass').value;
-  if(!email){showAuthError('Escribe tu correo.');return;}
-  if(!pass||pass.length<6){showAuthError('La contraseña debe tener al menos 6 caracteres.');return;}
-  const b=$('#auth-btn');b.disabled=true;b.textContent='Un momento…';
-  try{
-    if(mode==='login')await signInWithEmailAndPassword(auth,email,pass);
-    else{await createUserWithEmailAndPassword(auth,email,pass);toast({kind:'ok',title:'Cuenta creada',msg:'Bienvenido a tu inventario'});}
-  }catch(e){showAuthError(authMsg(e.code));b.disabled=false;setMode(mode);}
-};
-$('#auth-pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('#auth-btn').click();});
 if(MODO_PREVIEW){
-  // Vista previa: mostramos la app con datos de ejemplo, sin nube ni login
+  // Vista previa: datos de ejemplo, sin nube. Simulamos una empresa.
   arrancarPreview();
 }else{
-  // SIN LOGIN: entramos directo con sesión anónima
+  // SIN LOGIN: sesión anónima, luego pantalla de selección de empresa
   onAuthStateChanged(auth,u=>{
     if(u){
       user=u;
-      $('#boot').style.display='none';
-      $('#auth').style.display='none';$('#app-root').style.display='block';
-      startListening();
+      cargarEmpresas();
     }else{
-      // aún no hay sesión: iniciamos una anónima
       signInAnonymously(auth).catch(e=>{
         $('#boot').textContent='No se pudo conectar. Revisa tu conexión.';
         console.error('Error de sesión anónima:',e);
@@ -811,11 +819,149 @@ if(MODO_PREVIEW){
   });
 }
 
+/* ====== LISTA DE EMPRESAS ====== */
+function empresasCol(){return collection(db,'negocios',ROOT_ID,'empresas');}
+$('#btn-cambiar-emp').onclick=()=>salirEmpresa();
+function cargarEmpresas(){
+  if(unsubEmpresas)unsubEmpresas();
+  unsubEmpresas=onSnapshot(empresasCol(),snap=>{
+    // solo docs que sean empresas reales (tienen nombre); ignorar subcolecciones
+    empresasLista=snap.docs.map(d=>({id:d.id,...d.data()})).filter(e=>e.nombre!==undefined);
+    if(!empresaActiva){
+      $('#boot').style.display='none';
+      mostrarSelectorEmpresas();
+    }
+  },err=>{$('#boot').textContent='Error de conexión: '+err.message;});
+}
+function mostrarSelectorEmpresas(){
+  $('#app-root').style.display='none';
+  $('#empresa-form-screen').style.display='none';
+  $('#empresas-screen').style.display='flex';
+  const cont=$('#emp-list');
+  if(!empresasLista.length){
+    cont.innerHTML='<div class="emp-empty">Aún no tienes empresas. Crea la primera para empezar.</div>';
+    return;
+  }
+  cont.innerHTML=empresasLista.map(e=>{
+    const logo=e.logo?`<img src="${e.logo}">`:`<span class="ini">${esc((e.nombre||'?').charAt(0).toUpperCase())}</span>`;
+    const detalle=[e.rif,e.tel].filter(Boolean).join(' · ');
+    return `<div class="emp-card">
+      <div class="emp-logo">${logo}</div>
+      <div class="emp-info" data-enter="${esc(e.id)}"><div class="nm">${esc(e.nombre)}</div>${detalle?`<div class="dt">${esc(detalle)}</div>`:''}</div>
+      <div class="emp-acts">
+        <button class="icon-btn" data-edit="${esc(e.id)}" title="Editar">✏️</button>
+        <button class="icon-btn" data-del="${esc(e.id)}" title="Eliminar">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+  cont.querySelectorAll('[data-enter]').forEach(el=>el.onclick=()=>entrarEmpresa(el.dataset.enter));
+  cont.querySelectorAll('[data-edit]').forEach(el=>el.onclick=()=>abrirFormEmpresa(el.dataset.edit));
+  cont.querySelectorAll('[data-del]').forEach(el=>el.onclick=()=>eliminarEmpresa(el.dataset.del));
+}
+
+function entrarEmpresa(id){
+  const e=empresasLista.find(x=>x.id===id);if(!e)return;
+  empresaActiva=e;
+  DATA_ID=id;
+  empresa=e; // para el membrete de PDF
+  $('#empresas-screen').style.display='none';
+  $('#empresa-form-screen').style.display='none';
+  $('#app-root').style.display='block';
+  $('#emp-activa-nombre').textContent=e.nombre||'';
+  goTab('dashboard');
+  if(MODO_PREVIEW){_predatosDemo();setSync(false);$('#sync-text').textContent='Vista previa';}
+  else startListening();
+}
+
+function salirEmpresa(){
+  empresaActiva=null;DATA_ID=null;
+  if(unsubProd)unsubProd();if(unsubMov)unsubMov();
+  productos=[];movimientos=[];
+  mostrarSelectorEmpresas();
+}
+
+/* ====== CREAR / EDITAR EMPRESA ====== */
+let empfEditId=null, empfLogoTmp=null;
+$('#btn-nueva-emp').onclick=()=>abrirFormEmpresa(null);
+function abrirFormEmpresa(id){
+  empfEditId=id;empfLogoTmp=null;
+  const e=id?empresasLista.find(x=>x.id===id):null;
+  $('#empf-title').textContent=id?'Editar empresa':'Nueva empresa';
+  $('#empf-nombre').value=e?e.nombre||'':'';
+  $('#empf-rif').value=e?e.rif||'':'';
+  $('#empf-ubic').value=e?e.ubic||'':'';
+  $('#empf-tel').value=e?e.tel||'':'';
+  const prev=$('#empf-logo-prev');
+  if(e&&e.logo){prev.innerHTML=`<img src="${e.logo}" style="max-width:100%;max-height:100%;object-fit:contain">`;$('#btn-empf-logo-del').style.display='';}
+  else{prev.innerHTML='<span style="font-size:10px;color:var(--tenue)">Sin logo</span>';$('#btn-empf-logo-del').style.display='none';}
+  $('#empresas-screen').style.display='none';
+  $('#empresa-form-screen').style.display='flex';
+}
+$('#btn-empf-cancel').onclick=()=>mostrarSelectorEmpresas();
+$('#btn-empf-logo').onclick=()=>$('#empf-logo-file').click();
+$('#empf-logo-file').onchange=e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const im=new Image();
+    im.onload=()=>{
+      const max=300;let w=im.width,h=im.height;
+      if(w>h&&w>max){h=h*max/w;w=max;}else if(h>max){w=w*max/h;h=max;}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(im,0,0,w,h);
+      empfLogoTmp=cv.toDataURL('image/png');
+      $('#empf-logo-prev').innerHTML=`<img src="${empfLogoTmp}" style="max-width:100%;max-height:100%;object-fit:contain">`;
+      $('#btn-empf-logo-del').style.display='';
+    };
+    im.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+$('#btn-empf-logo-del').onclick=()=>{
+  empfLogoTmp='';
+  $('#empf-logo-prev').innerHTML='<span style="font-size:10px;color:var(--tenue)">Sin logo</span>';
+  $('#btn-empf-logo-del').style.display='none';
+};
+$('#btn-empf-save').onclick=async()=>{
+  const nombre=$('#empf-nombre').value.trim();
+  if(!nombre){toast({kind:'err',msg:'La empresa necesita un nombre'});return;}
+  const prev=empfEditId?empresasLista.find(x=>x.id===empfEditId):null;
+  const datos={
+    nombre,
+    rif:$('#empf-rif').value.trim(),
+    ubic:$('#empf-ubic').value.trim(),
+    tel:$('#empf-tel').value.trim(),
+    logo: empfLogoTmp!==null ? empfLogoTmp : (prev?prev.logo||'':'')
+  };
+  if(MODO_PREVIEW){
+    if(empfEditId){const i=empresasLista.findIndex(x=>x.id===empfEditId);empresasLista[i]={...empresasLista[i],...datos};}
+    else empresasLista.push({id:'e'+Date.now(),...datos});
+    mostrarSelectorEmpresas();return;
+  }
+  try{
+    const id=empfEditId||('emp-'+Date.now());
+    await setDoc(doc(db,'negocios',ROOT_ID,'empresas',id),datos,{merge:true});
+    toast({kind:'ok',title:empfEditId?'Empresa actualizada':'Empresa creada',msg:nombre});
+    mostrarSelectorEmpresas();
+  }catch(e){toast({kind:'err',title:'No se pudo guardar',msg:e.message,long:true});}
+};
+async function eliminarEmpresa(id){
+  const e=empresasLista.find(x=>x.id===id);if(!e)return;
+  if(!(await confirmar(`¿Eliminar la empresa "${e.nombre}"? Se borrarán también todos sus productos y movimientos. Esta acción no se puede deshacer.`,'Eliminar empresa')))return;
+  if(MODO_PREVIEW){empresasLista=empresasLista.filter(x=>x.id!==id);mostrarSelectorEmpresas();return;}
+  try{
+    await deleteDoc(doc(db,'negocios',ROOT_ID,'empresas',id));
+    toast({kind:'info',icon:'🗑',msg:'Empresa eliminada'});
+  }catch(e){toast({kind:'err',msg:e.message});}
+}
+
 function arrancarPreview(){
-  user={uid:'preview',email:'vista.previa@controlstock'};
+  user={uid:'preview'};
+  empresasLista=[{id:'demo',nombre:'Empresa de ejemplo',rif:'J-00000000-0',tel:'0414-0000000',ubic:'Ciudad',logo:''}];
   $('#boot').style.display='none';
-  $('#auth').style.display='none';$('#app-root').style.display='block';
-  setSync(false);$('#sync-text').textContent='Vista previa';
+  mostrarSelectorEmpresas();
+}
+function _predatosDemo(){
   // datos de ejemplo en memoria
   productos=[
     {code:'CD-6',name:'Producto CD-6',cat:'Bronce',pres:'Unidad',initial:10,min:5,price:12.50,created:Date.now()},
@@ -834,8 +980,8 @@ function arrancarPreview(){
 
 
 /* ====== FIRESTORE: rutas y escucha en tiempo real ====== */
-function prodCol(){return collection(db,'negocios',DATA_ID,'productos');}
-function movCol(){return collection(db,'negocios',DATA_ID,'movimientos');}
+function prodCol(){return collection(db,'negocios',ROOT_ID,'empresas',DATA_ID,'productos');}
+function movCol(){return collection(db,'negocios',ROOT_ID,'empresas',DATA_ID,'movimientos');}
 function setSync(on){$('#sync-dot').classList.toggle('off',!on);$('#sync-text').textContent=on?'Sincronizado':'Sin conexión';}
 
 function startListening(){
@@ -851,6 +997,11 @@ function startListening(){
   });
 }
 
+/* ====== DATOS DE LA EMPRESA (para el membrete de PDF) ======
+   'empresa' se asigna al entrar (empresaActiva). Aquí solo la declaramos. */
+let empresa={};
+function pintarEmpresa(){}
+
 /* ====== cálculos ====== */
 function prodOf(code){return productos.find(p=>p.code===code);}
 function nameOf(code){const p=prodOf(code);return p?p.name:'(eliminado)';}
@@ -859,13 +1010,13 @@ function stockOf(code){const p=prodOf(code);return(p?p.initial||0:0)+deltaOf(cod
 function lastUpdate(code){const ms=movimientos.filter(m=>m.code===code);return ms.length?ms[ms.length-1].ts:(prodOf(code)||{}).created;}
 
 /* ====== navegación ====== */
-const titles={inventario:['Inventario','Almacén · Existencias'],movimientos:['Movimientos','Almacén · Entradas, salidas y mermas'],estadisticas:['Estadísticas','Almacén · Control por producto'],dashboard:['Dashboard','Almacén · Resumen general'],ayuda:['Ayuda','Guía de uso'],novedades:['Novedades','Últimas mejoras'],privacidad:['Política de privacidad','Tus datos']};
+const titles={inventario:['Inventario','Almacén · Existencias'],movimientos:['Movimientos','Almacén · Entradas, salidas y mermas'],estadisticas:['Estadísticas','Almacén · Control por producto'],dashboard:['Dashboard','Almacén · Resumen general'],empresa:['Datos de la empresa','Membrete de los reportes'],ayuda:['Ayuda','Guía de uso'],novedades:['Novedades','Últimas mejoras'],privacidad:['Política de privacidad','Tus datos']};
 function goTab(tab){
   $$('.side nav button').forEach(x=>x.classList.toggle('on',x.dataset.tab===tab));
   $$('.panel-sec').forEach(x=>x.classList.toggle('on',x.id===tab));
   $('#page-title').textContent=titles[tab][0];$('#page-crumb').textContent=titles[tab][1];
   // el botón "Registrar movimiento" es un atajo: se oculta si ya estamos en Movimientos
-  $('#quick-mov').style.display=(tab==='movimientos'||tab==='ayuda'||tab==='novedades'||tab==='privacidad')?'none':'';
+  $('#quick-mov').style.display=(tab==='movimientos'||tab==='ayuda'||tab==='novedades'||tab==='privacidad'||tab==='empresa')?'none':'';
   closeSide();
 }
 $$('.side nav button').forEach(b=>b.onclick=()=>goTab(b.dataset.tab));
@@ -931,6 +1082,7 @@ function render(){
 function renderInv(){
   const q=($('#inv-search').value||'').toLowerCase();
   const catSel=$('#inv-cat').value;
+  const subSel=$('#inv-subcat').value;
   const nameSel=$('#inv-name').value;
   // el botón de eliminar categoría solo aparece si hay una categoría elegida
   $('#btn-del-cat').style.display=catSel?'':'none';
@@ -943,10 +1095,20 @@ function renderInv(){
     selCat.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
     if(cats.includes(prev))selCat.value=prev;
   }
-  // rellenar el desplegable de nombres de producto (según la categoría elegida)
-  const nombres=[...new Set(productos.filter(p=>!catSel||(p.cat||'').trim()===catSel).map(p=>p.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  // rellenar el desplegable de subcategorías (según la categoría elegida)
+  const subs=[...new Set(productos.filter(p=>!catSel||(p.cat||'').trim()===catSel).map(p=>(p.subcat||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const selSub=$('#inv-subcat');
+  const claveSubs=catSel+'||'+subs.join('|');
+  if(selSub.dataset.subs!==claveSubs){
+    selSub.dataset.subs=claveSubs;
+    const prevS=selSub.value;
+    selSub.innerHTML='<option value="">Todas las subcategorías</option>'+subs.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+    if(subs.includes(prevS))selSub.value=prevS; else selSub.value='';
+  }
+  // rellenar el desplegable de nombres de producto (según categoría y subcategoría)
+  const nombres=[...new Set(productos.filter(p=>(!catSel||(p.cat||'').trim()===catSel)&&(!subSel||(p.subcat||'').trim()===subSel)).map(p=>p.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   const selName=$('#inv-name');
-  const claveNombres=catSel+'||'+nombres.join('|');
+  const claveNombres=catSel+'|'+subSel+'||'+nombres.join('|');
   if(selName.dataset.nombres!==claveNombres){
     selName.dataset.nombres=claveNombres;
     const prevN=selName.value;
@@ -957,29 +1119,32 @@ function renderInv(){
   const list=productos.filter(p=>{
     const okText=p.name.toLowerCase().includes(q)||p.code.toLowerCase().includes(q);
     const okCat=!catSel||(p.cat||'').trim()===catSel;
+    const okSub=!subSel||(p.subcat||'').trim()===subSel;
     const okName=!nameSel||p.name===nameSel;
-    return okText&&okCat&&okName;
+    return okText&&okCat&&okSub&&okName;
   }).sort((a,b)=>a.name.localeCompare(b.name));
   $('#empty-inv').style.display=productos.length?'none':'block';
   list.forEach(p=>{const st=stockOf(p.code),low=st<=(p.min||0),lu=lastUpdate(p.code);
     const thumb=p.photo?`<img class="inv-thumb" src="${p.photo}" alt="">`:`<div class="inv-thumb-ph">📦</div>`;
-    tb.insertAdjacentHTML('beforeend',`<tr class="${low?'rowlow':''}"><td>${thumb}</td><td class="mono">${esc(p.code)}</td><td>${esc(p.name)}</td><td>${esc(p.cat||'—')}</td>
+    tb.insertAdjacentHTML('beforeend',`<tr class="${low?'rowlow':''}"><td>${thumb}</td><td class="mono">${esc(p.code)}</td><td>${esc(p.name)}</td><td>${esc(p.cat||'—')}</td><td>${esc(p.subcat||'—')}</td>
       <td class="r qty-strong">${st}${low?' <span class="tag low">bajo</span>':''}</td><td>${esc(p.pres||'—')}</td><td class="r">${p.min||0}</td><td class="r">${money(p.price||0)}</td>
       <td>${lu?dPart(lu):'—'}</td><td class="r" style="white-space:nowrap"><button class="btn ghost sm" data-bc="${esc(p.code)}">Código</button> <button class="btn ghost sm" data-edit="${esc(p.code)}">Editar</button> <button class="btn danger sm" data-del="${esc(p.code)}">Eliminar</button></td></tr>`);});
   tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>delProd(b.dataset.del));
   tb.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editProd(b.dataset.edit));
   tb.querySelectorAll('[data-bc]').forEach(b=>b.onclick=()=>mostrarCodigoBarras(b.dataset.bc));
 }
-// devuelve los productos aplicando los filtros activos (buscador, categoría, nombre)
+// devuelve los productos aplicando los filtros activos (buscador, categoría, subcategoría, nombre)
 function invFiltrado(){
   const q=($('#inv-search').value||'').toLowerCase();
   const catSel=$('#inv-cat').value;
+  const subSel=$('#inv-subcat').value;
   const nameSel=$('#inv-name').value;
   return productos.filter(p=>{
     const okText=p.name.toLowerCase().includes(q)||p.code.toLowerCase().includes(q);
     const okCat=!catSel||(p.cat||'').trim()===catSel;
+    const okSub=!subSel||(p.subcat||'').trim()===subSel;
     const okName=!nameSel||p.name===nameSel;
-    return okText&&okCat&&okName;
+    return okText&&okCat&&okSub&&okName;
   }).sort((a,b)=>a.name.localeCompare(b.name));
 }
 function renderMov(){
@@ -1081,21 +1246,21 @@ $('#btn-addprod').onclick=async()=>{
   if(!code){toast({kind:'err',msg:'Ingresa el código de barras'});return;}
   if(!name){toast({kind:'err',msg:'Ingresa el nombre del producto'});return;}
   const min=parseInt($('#p-min').value)||0,price=parseFloat($('#p-price').value)||0;
-  const cat=$('#p-cat').value.trim(),pres=$('#p-pres').value.trim();
+  const cat=$('#p-cat').value.trim(),subcat=$('#p-subcat').value.trim(),pres=$('#p-pres').value.trim();
   try{
     if(editCode){
       // EDITAR: conservamos initial y created; actualizamos el resto
       const p=prodOf(editCode);
-      const datos={name,cat,pres,min,price,initial:p.initial||0,created:p.created||serverTimestamp(),photo:photoData||''};
+      const datos={name,cat,subcat,pres,min,price,initial:p.initial||0,created:p.created||serverTimestamp(),photo:photoData||''};
       if(MODO_PREVIEW){Object.assign(p,datos);render();toast({kind:'ok',title:'Producto actualizado',msg:name});salirEdicion();return;}
-      await setDoc(doc(db,'negocios',DATA_ID,'productos',editCode),datos);
+      await setDoc(doc(db,'negocios',ROOT_ID,'empresas',DATA_ID,'productos',editCode),datos);
       toast({kind:'ok',title:'Producto actualizado',msg:name});
       salirEdicion();
     }else{
       if(prodOf(code)){toast({kind:'err',msg:'Ya existe un producto con ese código'});return;}
       const initial=parseInt($('#p-stock').value)||0;
-      if(MODO_PREVIEW){productos.push({code,name,cat,pres,initial,min,price,photo:photoData||'',created:Date.now()});clearProdForm();render();toast({kind:'ok',title:'Producto guardado',msg:`${name} (${code}) · stock inicial ${initial}`});return;}
-      await setDoc(doc(db,'negocios',DATA_ID,'productos',code),{name,cat,pres,initial,min,price,photo:photoData||'',created:serverTimestamp()});
+      if(MODO_PREVIEW){productos.push({code,name,cat,subcat,pres,initial,min,price,photo:photoData||'',created:Date.now()});clearProdForm();render();toast({kind:'ok',title:'Producto guardado',msg:`${name} (${code}) · stock inicial ${initial}`});return;}
+      await setDoc(doc(db,'negocios',ROOT_ID,'empresas',DATA_ID,'productos',code),{name,cat,subcat,pres,initial,min,price,photo:photoData||'',created:serverTimestamp()});
       clearProdForm();
       toast({kind:'ok',title:'Producto guardado',msg:`${name} (${code}) · stock inicial ${initial}`});
       if(initial<=min)toast({kind:'warn',title:'Stock bajo',msg:`${name} inicia con ${initial}, por debajo del mínimo (${min})`,long:true});
@@ -1106,7 +1271,7 @@ $('#btn-addprod').onclick=async()=>{
     toast({kind:'err',title:'No se pudo guardar',msg:m,long:true});
   }
 };
-function clearProdForm(){['p-code','p-name','p-cat','p-pres'].forEach(i=>$('#'+i).value='');$('#p-stock').value=0;$('#p-min').value=5;$('#p-price').value='0.00';photoData='';$('#p-photo-cam').value='';$('#p-photo-gal').value='';$('#photo-menu').style.display='none';mostrarFoto('');}
+function clearProdForm(){['p-code','p-name','p-cat','p-subcat','p-pres'].forEach(i=>$('#'+i).value='');$('#p-stock').value=0;$('#p-min').value=5;$('#p-price').value='0.00';photoData='';$('#p-photo-cam').value='';$('#p-photo-gal').value='';$('#photo-menu').style.display='none';mostrarFoto('');}
 $('#btn-clearprod').onclick=()=>{if(editCode)salirEdicion();else clearProdForm();};
 
 /* ====== IMPORTAR PRODUCTOS DESDE EXCEL / CSV ====== */
@@ -1140,6 +1305,7 @@ function detectarColumnas(encabezados){
     if(/(codigo|cod|referencia|barra|sku)/.test(n)&&map.code===undefined)map.code=i;
     else if(/(nombre|producto|descripcion|observacion|articulo|item)/.test(n)&&map.name===undefined)map.name=i;
     else if(/(cantidad|stock inicial|existencia|unidades|cant)/.test(n)&&map.qty===undefined)map.qty=i;
+    else if(/(subcategoria|subcat|subgrupo)/.test(n)&&map.subcat===undefined)map.subcat=i;
     else if(/(categoria|tipo|grupo|familia)/.test(n)&&map.cat===undefined)map.cat=i;
     else if(/(presentacion|unidad|medida|empaque)/.test(n)&&map.pres===undefined)map.pres=i;
     else if(/(minimo|min|reorden)/.test(n)&&map.min===undefined)map.min=i;
@@ -1176,6 +1342,7 @@ function procesarFilas(filas){
       name:name||code,
       initial:Math.round(num(cols.qty!==undefined?f[cols.qty]:0,0)),
       cat:cols.cat!==undefined?(f[cols.cat]??'').toString().trim():'',
+      subcat:cols.subcat!==undefined?(f[cols.subcat]??'').toString().trim():'',
       pres:cols.pres!==undefined?(f[cols.pres]??'').toString().trim():'',
       min:Math.round(num(cols.min!==undefined?f[cols.min]:5,5)),
       price:num(cols.price!==undefined?f[cols.price]:0,0)
@@ -1221,7 +1388,7 @@ async function confirmarImport(){
       while(pend.length){
         const lote=pend.splice(0,400);
         const batch=writeBatch(db);
-        lote.forEach(p=>batch.set(doc(db,'negocios',DATA_ID,'productos',p.code),{name:p.name,cat:p.cat,pres:p.pres,initial:p.initial,min:p.min,price:p.price,photo:'',created:serverTimestamp()}));
+        lote.forEach(p=>batch.set(doc(db,'negocios',ROOT_ID,'empresas',DATA_ID,'productos',p.code),{name:p.name,cat:p.cat,subcat:p.subcat||'',pres:p.pres,initial:p.initial,min:p.min,price:p.price,photo:'',created:serverTimestamp()}));
         await batch.commit();
       }
     }
@@ -1245,7 +1412,7 @@ function editProd(code){
   $('#btn-clearprod').style.display='none';
   $('#btn-canceledit').style.display='inline-flex';
   $('#p-code').value=code;$('#p-code').disabled=true; // el código no se cambia
-  $('#p-name').value=p.name||'';$('#p-cat').value=p.cat||'';$('#p-pres').value=p.pres||'';
+  $('#p-name').value=p.name||'';$('#p-cat').value=p.cat||'';$('#p-subcat').value=p.subcat||'';$('#p-pres').value=p.pres||'';
   $('#p-min').value=p.min||0;$('#p-price').value=(p.price||0).toFixed(2);
   // en edición, ocultamos "cantidad inicial" (se ajusta con movimientos, no aquí)
   $('#p-stock').value=p.initial||0;$('#p-stock').closest('.field').style.display='none';
@@ -1267,7 +1434,7 @@ $('#btn-canceledit').onclick=salirEdicion;
 
 async function delProd(code){const p=prodOf(code);if(!(await confirmar('¿Eliminar "'+(p?p.name:code)+'"? Su historial se conserva.','Eliminar producto')))return;
   try{if(MODO_PREVIEW){productos=productos.filter(p=>p.code!==code);if(currentCode===code)hideCards();if(editCode===code)salirEdicion();render();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});return;}
-    await deleteDoc(doc(db,'negocios',DATA_ID,'productos',code));if(currentCode===code)hideCards();if(editCode===code)salirEdicion();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});}
+    await deleteDoc(doc(db,'negocios',ROOT_ID,'empresas',DATA_ID,'productos',code));if(currentCode===code)hideCards();if(editCode===code)salirEdicion();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});}
   catch(e){toast({kind:'err',msg:e.message});}}
 
 /* --- eliminar todos los productos de la categoría elegida --- */
@@ -1291,7 +1458,7 @@ $('#btn-del-cat').onclick=async()=>{
     while(pend.length){
       const lote=pend.splice(0,400);
       const batch=writeBatch(db);
-      lote.forEach(p=>batch.delete(doc(db,'negocios',DATA_ID,'productos',p.code)));
+      lote.forEach(p=>batch.delete(doc(db,'negocios',ROOT_ID,'empresas',DATA_ID,'productos',p.code)));
       await batch.commit();
     }
     hideCards();if(editCode&&delCat.some(p=>p.code===editCode))salirEdicion();
@@ -1306,7 +1473,7 @@ async function delMov(id){
   const nom=nameOf(m.code),signo=(m.type==='in'?'+':'−')+m.qty;
   if(!(await confirmar(`¿Eliminar este movimiento de "${nom}" (${signo})? El stock se recalculará.`,'Eliminar movimiento')))return;
   try{if(MODO_PREVIEW){movimientos=movimientos.filter(x=>x.id!==id);render();toast({kind:'info',icon:'🗑',msg:'Movimiento eliminado · stock recalculado'});return;}
-    await deleteDoc(doc(db,'negocios',DATA_ID,'movimientos',id));toast({kind:'info',icon:'🗑',msg:'Movimiento eliminado · stock recalculado'});}
+    await deleteDoc(doc(db,'negocios',ROOT_ID,'empresas',DATA_ID,'movimientos',id));toast({kind:'info',icon:'🗑',msg:'Movimiento eliminado · stock recalculado'});}
   catch(e){toast({kind:'err',msg:e.message});}
 }
 $('#btn-clear-mov').onclick=async()=>{
@@ -1319,13 +1486,13 @@ $('#btn-clear-mov').onclick=async()=>{
     while(pendientes.length){
       const lote=pendientes.splice(0,400);
       const batch=writeBatch(db);
-      lote.forEach(m=>batch.delete(doc(db,'negocios',DATA_ID,'movimientos',m.id)));
+      lote.forEach(m=>batch.delete(doc(db,'negocios',ROOT_ID,'empresas',DATA_ID,'movimientos',m.id)));
       await batch.commit();
     }
     toast({kind:'ok',icon:'🗑',msg:'Historial de movimientos eliminado'});
   }catch(e){toast({kind:'err',title:'No se pudo eliminar',msg:e.message,long:true});}
 };
-$('#inv-search').oninput=renderInv;$('#inv-cat').onchange=renderInv;$('#inv-name').onchange=renderInv;$('#est-search').oninput=renderEst;
+$('#inv-search').oninput=renderInv;$('#inv-cat').onchange=renderInv;$('#inv-subcat').onchange=renderInv;$('#inv-name').onchange=renderInv;$('#est-search').oninput=renderEst;
 initDateFilters();
 
 /* ====== GENERAR CÓDIGO ÚNICO (para productos sin código de fábrica) ====== */
@@ -1541,8 +1708,8 @@ $('#cam-select').onchange=()=>{camIndex=parseInt($('#cam-select').value)||0;if(s
 /* ====== EXPORTAR CSV ====== */
 function downloadCSV(fn,rows){const csv=rows.map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;a.click();toast({kind:'ok',icon:'⬇',msg:'Archivo exportado'});}
-$('#btn-export-inv').onclick=()=>{const r=[['Codigo','Nombre','Categoria','Cantidad','Presentacion','Stock Minimo','Precio (USD)','Ultima Actualizacion']];
-  invFiltrado().forEach(p=>{const lu=lastUpdate(p.code);r.push([p.code,p.name,p.cat,stockOf(p.code),p.pres,p.min||0,(p.price||0).toFixed(2),lu?dPart(lu):'']);});downloadCSV('inventario.csv',r);};
+$('#btn-export-inv').onclick=()=>{const r=[['Codigo','Nombre','Categoria','Subcategoria','Cantidad','Presentacion','Stock Minimo','Precio (USD)','Ultima Actualizacion']];
+  invFiltrado().forEach(p=>{const lu=lastUpdate(p.code);r.push([p.code,p.name,p.cat,p.subcat||'',stockOf(p.code),p.pres,p.min||0,(p.price||0).toFixed(2),lu?dPart(lu):'']);});downloadCSV('inventario.csv',r);};
 $('#btn-export-mov').onclick=()=>{const r=[['Fecha','Hora','Codigo','Nombre','Tipo','Cantidad','Usuario','Stock Resultante','Motivo']];
   const running={};movimientos.forEach(m=>{const base=(prodOf(m.code)||{}).initial||0;if(running[m.code]===undefined)running[m.code]=base;running[m.code]+=(m.type==='in'?m.qty:-m.qty);
     r.push([dPart(m.ts),hPart(m.ts),m.code,nameOf(m.code),typeName[m.type],m.qty,m.user||'',running[m.code],m.reason||'']);});downloadCSV('movimientos.csv',r);};
@@ -1585,12 +1752,12 @@ function exportXLSX(filenameBase,sheetName,headers,rows,anchos,moneyCols){
 }
 
 $('#btn-export-inv-xls').onclick=()=>{
-  const headers=['Código','Nombre','Categoría','Cantidad','Presentación','Stock Mínimo','Precio (USD)','Última Actualización'];
+  const headers=['Código','Nombre','Categoría','Subcategoría','Cantidad','Presentación','Stock Mínimo','Precio (USD)','Última Actualización'];
   const rows=invFiltrado().map(p=>{
     const lu=lastUpdate(p.code);
-    return [p.code,p.name,p.cat||'',stockOf(p.code),p.pres||'',p.min||0,Number((p.price||0).toFixed(2)),lu?dPart(lu):''];
+    return [p.code,p.name,p.cat||'',p.subcat||'',stockOf(p.code),p.pres||'',p.min||0,Number((p.price||0).toFixed(2)),lu?dPart(lu):''];
   });
-  exportXLSX('inventario','Inventario',headers,rows,[16,26,16,10,14,12,12,18],[6]);
+  exportXLSX('inventario','Inventario',headers,rows,[16,26,18,14,10,14,12,12,18],[7]);
 };
 $('#btn-export-mov-xls').onclick=()=>{
   const headers=['Fecha','Hora','Código','Nombre','Tipo','Cantidad','Usuario','Stock Resultante','Motivo'];
@@ -1619,16 +1786,44 @@ function pdfBase(titulo){
   const ahora=new Date();
   const fecha=ahora.toLocaleDateString('es',{day:'2-digit',month:'long',year:'numeric'});
   const hora=ahora.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+  const tieneEmpresa=empresa&&(empresa.nombre||empresa.rif||empresa.ubic||empresa.tel||empresa.logo);
+  const altura=tieneEmpresa?92:70;
   docp.setFillColor(27,42,74);
-  docp.rect(0,0,W,70,'F');
+  docp.rect(0,0,W,altura,'F');
   docp.setTextColor(255,255,255);
-  docp.setFont('helvetica','bold');docp.setFontSize(20);
-  docp.text('ControlStock',40,34);
-  docp.setFont('helvetica','normal');docp.setFontSize(11);
-  docp.text(titulo,40,52);
-  docp.setFontSize(9);
-  docp.text(`${fecha} · ${hora}`,W-40,52,{align:'right'});
-  return {docp,W,ahora};
+  let xTexto=40;
+  // logo a la izquierda si existe
+  if(tieneEmpresa&&empresa.logo){
+    try{
+      const fmt=/png/i.test(empresa.logo)?'PNG':'JPEG';
+      docp.addImage(empresa.logo,fmt,40,14,64,64);
+      xTexto=118;
+    }catch(e){}
+  }
+  if(tieneEmpresa){
+    // membrete de la empresa
+    docp.setFont('helvetica','bold');docp.setFontSize(16);
+    docp.text(empresa.nombre||'',xTexto,30);
+    docp.setFont('helvetica','normal');docp.setFontSize(9);
+    let y=44;
+    if(empresa.rif){docp.text('RIF: '+empresa.rif,xTexto,y);y+=12;}
+    if(empresa.ubic){docp.text(empresa.ubic,xTexto,y);y+=12;}
+    if(empresa.tel){docp.text('Tel: '+empresa.tel,xTexto,y);y+=12;}
+    // título del reporte y fecha a la derecha
+    docp.setFont('helvetica','bold');docp.setFontSize(11);
+    docp.text(titulo,W-40,30,{align:'right'});
+    docp.setFont('helvetica','normal');docp.setFontSize(9);
+    docp.text(`${fecha} · ${hora}`,W-40,44,{align:'right'});
+  }else{
+    // sin datos de empresa: usar la marca ControlStock
+    docp.setFont('helvetica','bold');docp.setFontSize(20);
+    docp.text('ControlStock',40,34);
+    docp.setFont('helvetica','normal');docp.setFontSize(11);
+    docp.text(titulo,40,52);
+    docp.setFontSize(9);
+    docp.text(`${fecha} · ${hora}`,W-40,52,{align:'right'});
+  }
+  return {docp,W,ahora,headerH:altura};
 }
 function pdfPie(docp){
   const W=docp.internal.pageSize.getWidth(),H=docp.internal.pageSize.getHeight();
@@ -1647,17 +1842,17 @@ $('#btn-pdf-inv').onclick=()=>{
   const totProd=lista.length,totUnid=lista.reduce((a,p)=>a+stockOf(p.code),0);
   const totVal=lista.reduce((a,p)=>a+stockOf(p.code)*(p.price||0),0);
   const bajos=lista.filter(p=>stockOf(p.code)<=(p.min||0)).length;
-  docp.setTextColor(60,60,75);docp.setFontSize(10);let y=96;
+  docp.setTextColor(60,60,75);docp.setFontSize(10);let y=(base.headerH||70)+26;
   docp.setFont('helvetica','bold');docp.text('Resumen',40,y);docp.setFont('helvetica','normal');y+=16;
   if(catSel){docp.text(`Categoría: ${catSel}`,40,y);y+=14;}
   docp.text(`Productos: ${totProd}`,40,y);docp.text(`Unidades en stock: ${totUnid}`,180,y);y+=14;
   docp.text(`Valor del inventario: $${totVal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`,40,y);
   docp.text(`Productos en stock bajo: ${bajos}`,300,y);
   const ordenados=lista;
-  const body=ordenados.map(p=>{const st=stockOf(p.code);return [p.code,p.name,p.cat||'',String(st),p.pres||'',String(p.min||0),'$'+(p.price||0).toFixed(2)];});
-  docp.autoTable({startY:y+18,head:[['Código','Nombre','Categoría','Cant.','Present.','Mín.','Precio']],body,
+  const body=ordenados.map(p=>{const st=stockOf(p.code);return [p.code,p.name,p.cat||'',p.subcat||'',String(st),p.pres||'',String(p.min||0),'$'+(p.price||0).toFixed(2)];});
+  docp.autoTable({startY:y+18,head:[['Código','Nombre','Categoría','Subcat.','Cant.','Present.','Mín.','Precio']],body,
     styles:{fontSize:8,cellPadding:4},headStyles:{fillColor:VIOLETA,textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:ALTERNA},
-    columnStyles:{3:{halign:'right'},5:{halign:'right'},6:{halign:'right'}},
+    columnStyles:{4:{halign:'right'},6:{halign:'right'},7:{halign:'right'}},
     didParseCell:(d)=>{if(d.section==='body'){const p=ordenados[d.row.index];if(p&&stockOf(p.code)<=(p.min||0))d.cell.styles.fillColor=ROJOSUAVE;}},
     margin:{left:40,right:40}});
   pdfPie(docp);docp.save(pdfNombre('inventario',ahora));toast({kind:'ok',icon:'⬇',msg:'Reporte PDF generado'});
@@ -1668,7 +1863,7 @@ $('#btn-pdf-mov').onclick=()=>{
   const base=pdfBase('Reporte de Movimientos');if(!base){toast({kind:'err',msg:'Librería PDF no disponible. Revisa tu conexión.'});return;}
   const {docp,ahora}=base;
   let ent=0,sal=0,mer=0;movimientos.forEach(m=>{if(m.type==='in')ent+=m.qty;else if(m.type==='out')sal+=m.qty;else mer+=m.qty;});
-  docp.setTextColor(60,60,75);docp.setFontSize(10);let y=96;
+  docp.setTextColor(60,60,75);docp.setFontSize(10);let y=(base.headerH||70)+26;
   docp.setFont('helvetica','bold');docp.text('Resumen',40,y);docp.setFont('helvetica','normal');y+=16;
   docp.text(`Total movimientos: ${movimientos.length}`,40,y);y+=14;
   docp.text(`Entradas: ${ent}`,40,y);docp.text(`Salidas: ${sal}`,160,y);docp.text(`Mermas: ${mer}`,280,y);
@@ -1691,7 +1886,7 @@ $('#btn-pdf-est').onclick=()=>{
   let tE=0,tS=0,tM=0,tV=0;
   const body=ordenados.map(p=>{const s=statsOfF(p.code,'est'),st=stockOf(p.code),val=st*(p.price||0);tE+=s.ent;tS+=s.sal;tM+=s.mer;tV+=val;
     return [p.name,p.code,String(s.ent),String(s.sal),String(s.mer),String(st),'$'+val.toFixed(2)];});
-  docp.setTextColor(60,60,75);docp.setFontSize(10);let y=96;
+  docp.setTextColor(60,60,75);docp.setFontSize(10);let y=(base.headerH||70)+26;
   docp.setFont('helvetica','bold');docp.text('Resumen',40,y);docp.setFont('helvetica','normal');y+=16;
   docp.text(`Total entradas: ${tE}`,40,y);docp.text(`Total salidas: ${tS}`,170,y);docp.text(`Total mermas: ${tM}`,300,y);y+=14;
   docp.text(`Valor total del inventario: $${tV.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`,40,y);
