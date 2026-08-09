@@ -1893,96 +1893,99 @@ $('#mov-search').oninput=renderMov;$('#mov-type').onchange=renderMov;$('#mov-cat
 
 /* ====== ESCÁNER (método robusto: abrimos la cámara primero, luego leemos) ====== */
 let reader=null,scanning=false,currentStream=null,lastScan=0,lastCode='',camList=[],camIndex=0;
+let detectLoop=null; // para el bucle del BarcodeDetector nativo
 function scanStatus(msg){const s=$('#scan-status');if(msg){s.textContent=msg;s.style.display='block';}else s.style.display='none';}
+
+function onCodeLeido(code){
+  const now=Date.now();
+  if(code===lastCode&&now-lastScan<2000)return;
+  lastScan=now;lastCode=code;
+  if(navigator.vibrate)navigator.vibrate(110);
+  scanStatus('✓ Código leído: '+code);
+  showProductCard(code);
+  if(!prodOf(code))toast({kind:'warn',title:'Código no registrado',msg:code});
+}
 
 async function startScan(){
   if(scanning)return;
-  if(!window.ZXing){toast({kind:'err',msg:'Librería de escaneo no disponible'});return;}
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
     toast({kind:'err',title:'Cámara no disponible',msg:'Tu navegador no permite cámara aquí. Usa Chrome y abre la página con https.',long:true});return;
   }
   scanning=true;
   $('#btn-scan').style.display='none';$('#btn-stop').style.display='inline-flex';
   scanStatus('Abriendo cámara…');
+  const video=$('#video');
   try{
-    // 1) Pedimos la cámara trasera con buena resolución y enfoque continuo
+    // 1) Abrimos la cámara trasera con buena resolución
     let constraints;
     if(camList.length && camList[camIndex]){
-      constraints={video:{deviceId:{exact:camList[camIndex].deviceId},width:{ideal:1280},height:{ideal:720},focusMode:'continuous'}};
+      constraints={video:{deviceId:{exact:camList[camIndex].deviceId},width:{ideal:1920},height:{ideal:1080}}};
     }else{
-      constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720},focusMode:'continuous'}};
+      constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}};
     }
     let stream;
-    try{
-      stream=await navigator.mediaDevices.getUserMedia(constraints);
-    }catch(e1){
-      // si falla con esas condiciones, intentamos con cualquiera
+    try{stream=await navigator.mediaDevices.getUserMedia(constraints);}
+    catch(e1){
       try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});}
       catch(e2){stream=await navigator.mediaDevices.getUserMedia({video:true});}
     }
     currentStream=stream;
-
-    // intentar activar el autofoco por si el dispositivo lo soporta
+    // autofoco continuo si el dispositivo lo soporta
     try{
       const track=stream.getVideoTracks()[0];
       const caps=track.getCapabilities?track.getCapabilities():{};
-      if(caps.focusMode&&caps.focusMode.includes('continuous')){
-        await track.applyConstraints({advanced:[{focusMode:'continuous'}]});
-      }
+      if(caps.focusMode&&caps.focusMode.includes('continuous'))await track.applyConstraints({advanced:[{focusMode:'continuous'}]});
     }catch(eFocus){}
 
-    // 2) Conectamos el stream solo para tener permiso y listar cámaras
-    const video=$('#video');
+    // 2) Conectamos al video
+    video.srcObject=stream;
     video.setAttribute('playsinline','');video.muted=true;
     video.style.display='block';
+    try{await video.play();}catch(ePlay){}
 
-    // 3) Llenamos la lista de cámaras (ahora sí tenemos permiso y etiquetas)
+    // 3) Listamos cámaras (para el selector)
     if(!camList.length){
       const devices=await navigator.mediaDevices.enumerateDevices();
       camList=devices.filter(d=>d.kind==='videoinput');
       const sel=$('#cam-select');sel.innerHTML='';
       camList.forEach((c,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=c.label||('Cámara '+(i+1));sel.appendChild(o);});
-      // preferimos la trasera
       const backIdx=camList.findIndex(c=>/back|trasera|rear|environment/i.test(c.label));
       camIndex=backIdx>=0?backIdx:0;sel.value=String(camIndex);
       if(camList.length>1)sel.style.display='inline-block';
     }
-    // cerramos el stream de prueba: la librería abrirá el suyo
-    try{stream.getTracks().forEach(t=>t.stop());}catch(e){}
-    currentStream=null;
 
-    scanStatus('Cámara activa. Acerca el código y mantenlo firme.');
+    // 4) MÉTODO 1: BarcodeDetector nativo (el mejor en Android/Chrome, mismo motor de Google Lens)
+    if('BarcodeDetector' in window){
+      let formatos=['code_128','code_39','ean_13','ean_8','upc_a','upc_e','itf','codabar','qr_code'];
+      try{
+        const soportados=await window.BarcodeDetector.getSupportedFormats();
+        formatos=formatos.filter(f=>soportados.includes(f));
+      }catch(eF){}
+      const detector=new window.BarcodeDetector({formats:formatos});
+      scanStatus('Cámara activa (detector rápido). Apunta al código.');
+      const tick=async()=>{
+        if(!scanning)return;
+        try{
+          const codes=await detector.detect(video);
+          if(codes&&codes.length){onCodeLeido(codes[0].rawValue);}
+        }catch(eD){}
+        detectLoop=requestAnimationFrame(tick);
+      };
+      detectLoop=requestAnimationFrame(tick);
+      return;
+    }
 
-    // 4) La librería ZXing abre la cámara y lee en bucle (lo más confiable en 0.21.3)
-    const hints=new Map();
-    try{hints.set(ZXing.DecodeHintType.TRY_HARDER,true);}catch(eh){}
-    try{reader=new ZXing.BrowserMultiFormatReader(hints);}
-    catch(eR){reader=new ZXing.BrowserMultiFormatReader();}
-    reader.timeBetweenScansMillis=200;
-    const deviceId=(camList[camIndex]&&camList[camIndex].deviceId)||undefined;
-    let intentos=0;
-    reader.decodeFromVideoDevice(deviceId,video,(result,err)=>{
-      intentos++;
-      if(result){
-        const now=Date.now(),code=result.getText();
-        if(code===lastCode&&now-lastScan<2000)return;lastScan=now;lastCode=code;
-        if(navigator.vibrate)navigator.vibrate(110);
-        scanStatus('✓ Código leído: '+code);
-        showProductCard(code);
-        if(!prodOf(code))toast({kind:'warn',title:'Código no registrado',msg:code});
-        return;
-      }
-      // diagnóstico: mostrar que el lector está trabajando (cada ~20 intentos)
-      if(err){
-        const nombre=err.name||'';
-        // NotFoundException es normal (no encontró código en ese frame); otros errores sí importan
-        if(nombre&&nombre!=='NotFoundException'&&nombre!=='NotFoundException2'){
-          scanStatus('⚠ Error del lector: '+nombre+' — '+(err.message||''));
-        }else if(intentos%15===0){
-          scanStatus('Buscando código… (analizando '+intentos+' cuadros)');
-        }
-      }
-    });
+    // 5) MÉTODO 2 (respaldo): ZXing, si el navegador no tiene BarcodeDetector
+    if(window.ZXing){
+      scanStatus('Cámara activa. Apunta al código.');
+      const hints=new Map();
+      try{hints.set(ZXing.DecodeHintType.TRY_HARDER,true);}catch(eh){}
+      try{reader=new ZXing.BrowserMultiFormatReader(hints);}catch(eR){reader=new ZXing.BrowserMultiFormatReader();}
+      reader.timeBetweenScansMillis=150;
+      reader.decodeFromStream(stream,video,(result)=>{if(result)onCodeLeido(result.getText());});
+    }else{
+      scanStatus('Tu navegador no soporta lectura de códigos. Usa "Ingresar código".');
+    }
   }catch(e){
     scanning=false;
     $('#btn-scan').style.display='inline-flex';$('#btn-stop').style.display='none';
@@ -1995,10 +1998,12 @@ async function startScan(){
   }
 }
 function stopScan(){
-  if(reader){try{reader.reset()}catch(e){}}
+  scanning=false;
+  if(detectLoop){cancelAnimationFrame(detectLoop);detectLoop=null;}
+  if(reader){try{reader.reset()}catch(e){}reader=null;}
   if(currentStream){try{currentStream.getTracks().forEach(t=>t.stop())}catch(e){}currentStream=null;}
   const video=$('#video');try{video.pause();video.srcObject=null;}catch(e){}
-  scanning=false;video.style.display='none';scanStatus('');
+  video.style.display='none';scanStatus('');
   $('#btn-scan').style.display='inline-flex';$('#btn-stop').style.display='none';
 }
 $('#btn-scan').onclick=startScan;$('#btn-stop').onclick=stopScan;
