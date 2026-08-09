@@ -101,6 +101,8 @@
   td{padding:10px 8px;border:1px solid var(--linea2);text-align:center}
   td.r{text-align:center}
   .prod-nombre{font-weight:700;color:var(--tinta)}
+  .col-check{width:40px}
+  .row-check,#check-todos{width:20px;height:20px;cursor:pointer;accent-color:var(--rojo)}
   tbody tr:hover{background:#f8fafc}
   /* en móvil: columnas más compactas y nombre acotado para que no se separen */
   @media(max-width:900px){
@@ -417,6 +419,7 @@
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
             <button class="btn" id="btn-addprod">Guardar producto</button>
+            <button class="btn ghost" id="btn-gen-barra" style="display:none">🏷 Generar código de barra</button>
             <button class="btn ghost" id="btn-clearprod">Limpiar</button>
             <button class="btn ghost" id="btn-cerrar-manual">Cerrar</button>
             <button class="btn ghost" id="btn-canceledit" style="display:none">Cancelar edición</button>
@@ -442,6 +445,7 @@
           <select id="inv-cat"><option value="">Todas las categorías</option></select>
           <select id="inv-subcat"><option value="">Todas las subcategorías</option></select>
           <select id="inv-name"><option value="">Todos los productos</option></select>
+          <button id="btn-modo-sel" title="Seleccionar para eliminar" style="background:var(--panel);border:1px solid var(--linea2);border-radius:9px;padding:8px 11px;cursor:pointer;font-size:16px;line-height:1">🗑️</button>
           <div class="spacer"></div>
           <div class="filebtns">
           <button class="btn-file" id="btn-pdf-inv" title="Descargar PDF" aria-label="Descargar PDF">
@@ -455,9 +459,15 @@
           </button>
           </div>
         </div>
+        <div id="barra-seleccion" style="display:none;align-items:center;gap:12px;flex-wrap:wrap;background:var(--rojo-bg);border:1px solid var(--rojo);border-radius:10px;padding:10px 14px;margin-bottom:12px">
+          <span id="sel-info" style="font-weight:600;color:var(--rojo-tx)">0 seleccionados</span>
+          <div class="spacer" style="flex:1"></div>
+          <button class="btn danger sm" id="btn-eliminar-sel">🗑 Eliminar seleccionados</button>
+          <button class="btn ghost sm" id="btn-cancelar-sel">Cancelar</button>
+        </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-inv">
-            <thead><tr><th></th><th>Código</th><th>Nombre</th><th>Categoría</th><th>Subcategoría</th><th class="r">Cantidad</th><th>Presentación</th><th class="r">Stock Mínimo</th><th class="r">Precio (USD)</th><th>Última Actualización</th><th></th></tr></thead>
+            <thead><tr><th id="th-check" class="col-check" style="display:none"><input type="checkbox" id="check-todos" title="Marcar todos"></th><th></th><th>Código</th><th>Nombre</th><th>Categoría</th><th>Subcategoría</th><th class="r">Cantidad</th><th>Presentación</th><th class="r">Stock Mínimo</th><th class="r">Precio (USD)</th><th>Última Actualización</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
           <div class="empty" id="empty-inv"><div class="big">Hoja vacía</div>Agrega tu primer producto con el formulario de arriba.</div>
@@ -1130,6 +1140,28 @@ function render(){
   renderInv();renderMov();renderEst();renderDash();
   if(currentCode&&prodOf(currentCode))showProductCard(currentCode);
 }
+/* ====== MODO SELECCIÓN PARA ELIMINAR ====== */
+let modoSeleccion=false;
+let seleccionados=new Set();
+function actualizarBarraSeleccion(){
+  const info=$('#sel-info');
+  if(info)info.textContent=seleccionados.size+(seleccionados.size===1?' seleccionado':' seleccionados');
+  // estado del checkbox "marcar todos"
+  const todos=$('#check-todos');
+  if(todos){
+    const visibles=invFiltrado();
+    const todosMarcados=visibles.length>0&&visibles.every(p=>seleccionados.has(p.code));
+    todos.checked=todosMarcados;
+  }
+}
+function toggleModoSeleccion(activar){
+  modoSeleccion=activar;
+  seleccionados.clear();
+  $('#barra-seleccion').style.display=activar?'flex':'none';
+  $('#btn-modo-sel').style.background=activar?'var(--rojo-bg)':'var(--panel)';
+  renderInv();
+  actualizarBarraSeleccion();
+}
 function renderInv(){
   const q=($('#inv-search').value||'').toLowerCase();
   const catSel=$('#inv-cat').value;
@@ -1176,12 +1208,17 @@ function renderInv(){
   $('#empty-inv').style.display=productos.length?'none':'block';
   list.forEach(p=>{const st=stockOf(p.code),low=st<=(p.min||0),lu=lastUpdate(p.code);
     const thumb=p.photo?`<img class="inv-thumb" src="${p.photo}" alt="">`:`<div class="inv-thumb-ph">📦</div>`;
-    tb.insertAdjacentHTML('beforeend',`<tr class="${low?'rowlow':''}"><td>${thumb}</td><td class="mono">${esc(p.code)}</td><td class="prod-nombre">${esc(p.name)}</td><td>${esc(p.cat||'—')}</td><td>${esc(p.subcat||'—')}</td>
+    const chk=`<td class="col-check" style="${modoSeleccion?'':'display:none'}"><input type="checkbox" class="row-check" data-check="${esc(p.code)}" ${seleccionados.has(p.code)?'checked':''}></td>`;
+    tb.insertAdjacentHTML('beforeend',`<tr class="${low?'rowlow':''}">${chk}<td>${thumb}</td><td class="mono">${esc(p.code)}</td><td class="prod-nombre">${esc(p.name)}</td><td>${esc(p.cat||'—')}</td><td>${esc(p.subcat||'—')}</td>
       <td class="r qty-strong">${st}${low?' <span class="tag low">bajo</span>':''}</td><td>${esc(p.pres||'—')}</td><td class="r">${p.min||0}</td><td class="r">${money(p.price||0)}</td>
-      <td>${lu?dPart(lu):'—'}</td><td class="r" style="white-space:nowrap"><button class="btn ghost sm" data-bc="${esc(p.code)}">Código</button> <button class="btn ghost sm" data-edit="${esc(p.code)}">Editar</button> <button class="btn danger sm" data-del="${esc(p.code)}">Eliminar</button></td></tr>`);});
-  tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>delProd(b.dataset.del));
+      <td>${lu?dPart(lu):'—'}</td><td class="r" style="white-space:nowrap"><button class="btn ghost sm" data-edit="${esc(p.code)}">Editar</button></td></tr>`);});
   tb.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editProd(b.dataset.edit));
-  tb.querySelectorAll('[data-bc]').forEach(b=>b.onclick=()=>mostrarCodigoBarras(b.dataset.bc));
+  tb.querySelectorAll('[data-check]').forEach(c=>c.onchange=()=>{
+    if(c.checked)seleccionados.add(c.dataset.check);else seleccionados.delete(c.dataset.check);
+    actualizarBarraSeleccion();
+  });
+  // mostrar/ocultar la columna de checkbox del encabezado
+  const thCheck=$('#th-check');if(thCheck)thCheck.style.display=modoSeleccion?'':'none';
 }
 // devuelve los productos aplicando los filtros activos (buscador, categoría, subcategoría, nombre)
 function invFiltrado(){
@@ -1525,6 +1562,7 @@ function editProd(code){
   $('#btn-addprod').textContent='Guardar cambios';
   $('#btn-clearprod').style.display='none';
   $('#btn-canceledit').style.display='inline-flex';
+  $('#btn-gen-barra').style.display='inline-flex';
   $('#p-code').value=code;$('#p-code').disabled=true; // el código no se cambia
   $('#p-name').value=p.name||'';$('#p-cat').value=p.cat||'';$('#p-subcat').value=p.subcat||'';$('#p-pres').value=p.pres||'';
   $('#p-min').value=p.min||0;$('#p-price').value=(p.price||0).toFixed(2);
@@ -1542,11 +1580,13 @@ function salirEdicion(){
   $('#btn-addprod').textContent='Guardar producto';
   $('#btn-clearprod').style.display='inline-flex';
   $('#btn-canceledit').style.display='none';
+  $('#btn-gen-barra').style.display='none';
   $('#p-code').disabled=false;
   $('#p-stock').closest('.field').style.display='';
   clearProdForm();
 }
 $('#btn-canceledit').onclick=salirEdicion;
+$('#btn-gen-barra').onclick=()=>{if(editCode)mostrarCodigoBarras(editCode);};
 
 async function delProd(code){const p=prodOf(code);if(!(await confirmar('¿Eliminar "'+(p?p.name:code)+'"? Su historial se conserva.','Eliminar producto')))return;
   try{if(MODO_PREVIEW){productos=productos.filter(p=>p.code!==code);if(currentCode===code)hideCards();if(editCode===code)salirEdicion();render();toast({kind:'info',icon:'🗑',msg:'Producto eliminado'});return;}
@@ -1581,6 +1621,39 @@ $('#btn-clear-mov').onclick=async()=>{
   }catch(e){toast({kind:'err',title:'No se pudo eliminar',msg:e.message,long:true});}
 };
 $('#inv-search').oninput=renderInv;$('#inv-cat').onchange=renderInv;$('#inv-subcat').onchange=renderInv;$('#inv-name').onchange=renderInv;$('#est-search').oninput=renderEst;$('#est-cat').onchange=renderEst;$('#est-subcat').onchange=renderEst;
+
+/* --- modo selección para eliminar --- */
+$('#btn-modo-sel').onclick=()=>toggleModoSeleccion(!modoSeleccion);
+$('#btn-cancelar-sel').onclick=()=>toggleModoSeleccion(false);
+$('#check-todos').onchange=(e)=>{
+  const visibles=invFiltrado();
+  if(e.target.checked)visibles.forEach(p=>seleccionados.add(p.code));
+  else visibles.forEach(p=>seleccionados.delete(p.code));
+  renderInv();actualizarBarraSeleccion();
+};
+$('#btn-eliminar-sel').onclick=async()=>{
+  if(!seleccionados.size){toast({kind:'info',msg:'No has seleccionado ningún producto'});return;}
+  const n=seleccionados.size;
+  if(!(await confirmar(`Se eliminarán ${n} producto${n===1?'':'s'} seleccionado${n===1?'':'s'}. El historial de movimientos se conserva, pero los productos desaparecen del inventario. Esta acción no se puede deshacer. ¿Continuar?`,'Eliminar seleccionados')))return;
+  const codigos=[...seleccionados];
+  try{
+    if(MODO_PREVIEW){
+      productos=productos.filter(p=>!seleccionados.has(p.code));
+      toggleModoSeleccion(false);
+      toast({kind:'ok',icon:'🗑',msg:`${n} producto${n===1?'':'s'} eliminado${n===1?'':'s'}`});
+      return;
+    }
+    let pend=codigos.slice();
+    while(pend.length){
+      const lote=pend.splice(0,400);
+      const batch=writeBatch(db);
+      lote.forEach(code=>batch.delete(doc(db,'negocios',ROOT_ID,'empresas',DATA_ID,'productos',code)));
+      await batch.commit();
+    }
+    toggleModoSeleccion(false);
+    toast({kind:'ok',icon:'🗑',msg:`${n} producto${n===1?'':'s'} eliminado${n===1?'':'s'}`,long:true});
+  }catch(e){toast({kind:'err',title:'Error al eliminar',msg:e.message,long:true});}
+};
 initDateFilters();
 
 /* ====== GENERAR CÓDIGO ÚNICO (para productos sin código de fábrica) ====== */
