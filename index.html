@@ -1960,7 +1960,9 @@ async function startScan(){
     catch(eR){reader=new ZXing.BrowserMultiFormatReader();}
     reader.timeBetweenScansMillis=200;
     const deviceId=(camList[camIndex]&&camList[camIndex].deviceId)||undefined;
+    let intentos=0;
     reader.decodeFromVideoDevice(deviceId,video,(result,err)=>{
+      intentos++;
       if(result){
         const now=Date.now(),code=result.getText();
         if(code===lastCode&&now-lastScan<2000)return;lastScan=now;lastCode=code;
@@ -1968,8 +1970,18 @@ async function startScan(){
         scanStatus('✓ Código leído: '+code);
         showProductCard(code);
         if(!prodOf(code))toast({kind:'warn',title:'Código no registrado',msg:code});
+        return;
       }
-      // los "NotFoundException" entre lecturas son normales; se ignoran
+      // diagnóstico: mostrar que el lector está trabajando (cada ~20 intentos)
+      if(err){
+        const nombre=err.name||'';
+        // NotFoundException es normal (no encontró código en ese frame); otros errores sí importan
+        if(nombre&&nombre!=='NotFoundException'&&nombre!=='NotFoundException2'){
+          scanStatus('⚠ Error del lector: '+nombre+' — '+(err.message||''));
+        }else if(intentos%15===0){
+          scanStatus('Buscando código… (analizando '+intentos+' cuadros)');
+        }
+      }
     });
   }catch(e){
     scanning=false;
