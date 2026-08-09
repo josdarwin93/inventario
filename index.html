@@ -491,6 +491,7 @@
           <select id="mov-cat"><option value="">Todas las categorías</option></select>
           <select id="mov-subcat"><option value="">Todas las subcategorías</option></select>
           <select id="mov-type"><option value="">Todos los tipos</option><option value="in">Entradas</option><option value="out">Salidas</option><option value="merma">Mermas</option></select>
+          <button id="btn-modo-sel-mov" title="Seleccionar para eliminar" style="background:var(--panel);border:1px solid var(--linea2);border-radius:9px;padding:8px 11px;cursor:pointer;font-size:16px;line-height:1">🗑️</button>
           <div class="spacer"></div>
           <button class="btn danger sm" id="btn-clear-mov">🗑 Eliminar todo</button>
           <div class="filebtns">
@@ -505,9 +506,15 @@
           </button>
           </div>
         </div>
+        <div id="barra-seleccion-mov" style="display:none;align-items:center;gap:12px;flex-wrap:wrap;background:var(--rojo-bg);border:1px solid var(--rojo);border-radius:10px;padding:10px 14px;margin-bottom:12px">
+          <span id="sel-info-mov" style="font-weight:600;color:var(--rojo-tx)">0 seleccionados</span>
+          <div class="spacer" style="flex:1"></div>
+          <button class="btn danger sm" id="btn-eliminar-sel-mov">🗑 Eliminar seleccionados</button>
+          <button class="btn ghost sm" id="btn-cancelar-sel-mov">Cancelar</button>
+        </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-mov">
-            <thead><tr><th>Fecha</th><th>Hora</th><th>Código</th><th>Nombre</th><th>Tipo</th><th class="r">Cantidad</th><th>Usuario</th><th class="r">Stock Resultante</th><th>Motivo</th><th></th></tr></thead>
+            <thead><tr><th id="th-check-mov" class="col-check" style="display:none"><input type="checkbox" id="check-todos-mov" title="Marcar todos"></th><th>Fecha</th><th>Hora</th><th>Código</th><th>Nombre</th><th>Tipo</th><th class="r">Cantidad</th><th>Usuario</th><th class="r">Stock Resultante</th><th>Motivo</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
           <div class="empty" id="empty-mov"><div class="big">Sin movimientos</div>Escanea un producto y registra una entrada, salida o merma.</div>
@@ -530,6 +537,7 @@
           <input id="est-search" placeholder="Buscar producto o código…">
           <select id="est-cat"><option value="">Todas las categorías</option></select>
           <select id="est-subcat"><option value="">Todas las subcategorías</option></select>
+          <button id="btn-modo-sel-est" title="Seleccionar para eliminar" style="background:var(--panel);border:1px solid var(--linea2);border-radius:9px;padding:8px 11px;cursor:pointer;font-size:16px;line-height:1">🗑️</button>
           <div class="spacer"></div>
           <div class="filebtns">
           <button class="btn-file" id="btn-pdf-est" title="Descargar PDF" aria-label="Descargar PDF">
@@ -543,9 +551,15 @@
           </button>
           </div>
         </div>
+        <div id="barra-seleccion-est" style="display:none;align-items:center;gap:12px;flex-wrap:wrap;background:var(--rojo-bg);border:1px solid var(--rojo);border-radius:10px;padding:10px 14px;margin-bottom:12px">
+          <span id="sel-info-est" style="font-weight:600;color:var(--rojo-tx)">0 seleccionados</span>
+          <div class="spacer" style="flex:1"></div>
+          <button class="btn danger sm" id="btn-eliminar-sel-est">🗑 Eliminar seleccionados</button>
+          <button class="btn ghost sm" id="btn-cancelar-sel-est">Cancelar</button>
+        </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-est">
-            <thead><tr><th>Producto</th><th>Código</th><th class="r">Total Entradas</th><th class="r">Total Salidas</th><th class="r">Total Mermas</th><th class="r">Stock Actual</th><th class="r">Valor Inventario (USD)</th></tr></thead>
+            <thead><tr><th id="th-check-est" class="col-check" style="display:none"><input type="checkbox" id="check-todos-est" title="Marcar todos"></th><th>Producto</th><th>Código</th><th class="r">Total Entradas</th><th class="r">Total Salidas</th><th class="r">Total Mermas</th><th class="r">Stock Actual</th><th class="r">Valor Inventario (USD)</th></tr></thead>
             <tbody></tbody><tfoot></tfoot>
           </table>
           <div class="empty" id="empty-est"><div class="big">Sin datos</div>Agrega productos y registra movimientos.</div>
@@ -1140,23 +1154,22 @@ function render(){
   renderInv();renderMov();renderEst();renderDash();
   if(currentCode&&prodOf(currentCode))showProductCard(currentCode);
 }
-/* ====== MODO SELECCIÓN PARA ELIMINAR ====== */
-let modoSeleccion=false;
-let seleccionados=new Set();
+/* ====== MODO SELECCIÓN PARA ELIMINAR (inventario, movimientos, estadísticas) ====== */
+let modoSel={inv:false,mov:false,est:false};
+let selItems={inv:new Set(),mov:new Set(),est:new Set()};
+const seleccionados=selItems.inv;
 function actualizarBarraSeleccion(){
   const info=$('#sel-info');
-  if(info)info.textContent=seleccionados.size+(seleccionados.size===1?' seleccionado':' seleccionados');
-  // estado del checkbox "marcar todos"
+  if(info)info.textContent=selItems.inv.size+(selItems.inv.size===1?' seleccionado':' seleccionados');
   const todos=$('#check-todos');
   if(todos){
     const visibles=invFiltrado();
-    const todosMarcados=visibles.length>0&&visibles.every(p=>seleccionados.has(p.code));
-    todos.checked=todosMarcados;
+    todos.checked=visibles.length>0&&visibles.every(p=>selItems.inv.has(p.code));
   }
 }
 function toggleModoSeleccion(activar){
-  modoSeleccion=activar;
-  seleccionados.clear();
+  modoSel.inv=activar;
+  selItems.inv.clear();
   $('#barra-seleccion').style.display=activar?'flex':'none';
   $('#btn-modo-sel').style.background=activar?'var(--rojo-bg)':'var(--panel)';
   renderInv();
@@ -1208,7 +1221,7 @@ function renderInv(){
   $('#empty-inv').style.display=productos.length?'none':'block';
   list.forEach(p=>{const st=stockOf(p.code),low=st<=(p.min||0),lu=lastUpdate(p.code);
     const thumb=p.photo?`<img class="inv-thumb" src="${p.photo}" alt="">`:`<div class="inv-thumb-ph">📦</div>`;
-    const chk=`<td class="col-check" style="${modoSeleccion?'':'display:none'}"><input type="checkbox" class="row-check" data-check="${esc(p.code)}" ${seleccionados.has(p.code)?'checked':''}></td>`;
+    const chk=`<td class="col-check" style="${modoSel.inv?'':'display:none'}"><input type="checkbox" class="row-check" data-check="${esc(p.code)}" ${seleccionados.has(p.code)?'checked':''}></td>`;
     tb.insertAdjacentHTML('beforeend',`<tr class="${low?'rowlow':''}">${chk}<td>${thumb}</td><td class="mono">${esc(p.code)}</td><td class="prod-nombre">${esc(p.name)}</td><td>${esc(p.cat||'—')}</td><td>${esc(p.subcat||'—')}</td>
       <td class="r qty-strong">${st}${low?' <span class="tag low">bajo</span>':''}</td><td>${esc(p.pres||'—')}</td><td class="r">${p.min||0}</td><td class="r">${money(p.price||0)}</td>
       <td>${lu?dPart(lu):'—'}</td><td class="r" style="white-space:nowrap"><button class="btn ghost sm" data-edit="${esc(p.code)}">Editar</button></td></tr>`);});
@@ -1218,7 +1231,7 @@ function renderInv(){
     actualizarBarraSeleccion();
   });
   // mostrar/ocultar la columna de checkbox del encabezado
-  const thCheck=$('#th-check');if(thCheck)thCheck.style.display=modoSeleccion?'':'none';
+  const thCheck=$('#th-check');if(thCheck)thCheck.style.display=modoSel.inv?'':'none';
 }
 // devuelve los productos aplicando los filtros activos (buscador, categoría, subcategoría, nombre)
 function invFiltrado(){
@@ -1276,9 +1289,17 @@ function renderMov(){
   $('#mov-df-info').textContent=textoPeriodo('mov')?textoPeriodo('mov')+' · '+list.length+' mov.':'';
   const tb=$('#tbl-mov tbody');tb.innerHTML='';
   $('#empty-mov').style.display=list.length?'none':'block';
-  list.forEach(m=>tb.insertAdjacentHTML('beforeend',`<tr><td>${dPart(m.ts)}</td><td>${hPart(m.ts)}</td><td class="mono">${esc(m.code)}</td><td>${esc(nameOf(m.code))}</td>
-    <td>${typeTag[m.type]}</td><td class="r qty-strong">${m.type==='in'?'+':'−'}${m.qty}</td><td>${esc(m.user||'—')}</td><td class="r qty-strong">${m.result}</td><td>${esc(m.reason||'—')}</td><td class="r"><button class="btn danger sm" data-delmov="${esc(m.id)}">Eliminar</button></td></tr>`));
+  list.forEach(m=>{
+    const chk=`<td class="col-check" style="${modoSel.mov?'':'display:none'}"><input type="checkbox" class="row-check" data-checkmov="${esc(m.id)}" ${selItems.mov.has(m.id)?'checked':''}></td>`;
+    tb.insertAdjacentHTML('beforeend',`<tr>${chk}<td>${dPart(m.ts)}</td><td>${hPart(m.ts)}</td><td class="mono">${esc(m.code)}</td><td>${esc(nameOf(m.code))}</td>
+    <td>${typeTag[m.type]}</td><td class="r qty-strong">${m.type==='in'?'+':'−'}${m.qty}</td><td>${esc(m.user||'—')}</td><td class="r qty-strong">${m.result}</td><td>${esc(m.reason||'—')}</td><td class="r"><button class="btn danger sm" data-delmov="${esc(m.id)}">Eliminar</button></td></tr>`);
+  });
   tb.querySelectorAll('[data-delmov]').forEach(b=>b.onclick=()=>delMov(b.dataset.delmov));
+  tb.querySelectorAll('[data-checkmov]').forEach(c=>c.onchange=()=>{
+    if(c.checked)selItems.mov.add(c.dataset.checkmov);else selItems.mov.delete(c.dataset.checkmov);
+    actualizarBarraSelMov();
+  });
+  const thc=$('#th-check-mov');if(thc)thc.style.display=modoSel.mov?'':'none';
 }
 function statsOf(code){let ent=0,sal=0,mer=0;movimientos.filter(m=>m.code===code).forEach(m=>{if(m.type==='in')ent+=m.qty;else if(m.type==='out')sal+=m.qty;else mer+=m.qty;});return{ent,sal,mer};}
 function renderEst(){
@@ -1290,9 +1311,16 @@ function renderEst(){
   $('#empty-est').style.display=productos.length?'none':'block';
   let tE=0,tS=0,tM=0,tV=0;
   list.forEach(p=>{const s=statsOfF(p.code,'est'),st=stockOf(p.code),val=st*(p.price||0);tE+=s.ent;tS+=s.sal;tM+=s.mer;tV+=val;
-    tb.insertAdjacentHTML('beforeend',`<tr><td>${esc(p.name)}</td><td class="mono">${esc(p.code)}</td><td class="r" style="color:var(--verde-tx);font-weight:700">${s.ent}</td>
+    const chk=`<td class="col-check" style="${modoSel.est?'':'display:none'}"><input type="checkbox" class="row-check" data-checkest="${esc(p.code)}" ${selItems.est.has(p.code)?'checked':''}></td>`;
+    tb.insertAdjacentHTML('beforeend',`<tr>${chk}<td>${esc(p.name)}</td><td class="mono">${esc(p.code)}</td><td class="r" style="color:var(--verde-tx);font-weight:700">${s.ent}</td>
       <td class="r" style="color:var(--rojo-tx);font-weight:700">${s.sal}</td><td class="r" style="color:var(--ambar-tx);font-weight:700">${s.mer}</td><td class="r qty-strong">${st}</td><td class="r">${money(val)}</td></tr>`);});
-  if(productos.length)tf.innerHTML=`<tr style="background:var(--bg);font-weight:800"><td colspan="2">TOTALES</td><td class="r">${tE}</td><td class="r">${tS}</td><td class="r">${tM}</td><td class="r"></td><td class="r">${money(tV)}</td></tr>`;
+  const colspanTot=modoSel.est?3:2;
+  if(productos.length)tf.innerHTML=`<tr style="background:var(--bg);font-weight:800"><td colspan="${colspanTot}">TOTALES</td><td class="r">${tE}</td><td class="r">${tS}</td><td class="r">${tM}</td><td class="r"></td><td class="r">${money(tV)}</td></tr>`;
+  $('#tbl-est tbody').querySelectorAll('[data-checkest]').forEach(c=>c.onchange=()=>{
+    if(c.checked)selItems.est.add(c.dataset.checkest);else selItems.est.delete(c.dataset.checkest);
+    actualizarBarraSelEst();
+  });
+  const thc=$('#th-check-est');if(thc)thc.style.display=modoSel.est?'':'none';
 }
 function renderDash(){
   const movsF=movimientos;
@@ -1623,7 +1651,7 @@ $('#btn-clear-mov').onclick=async()=>{
 $('#inv-search').oninput=renderInv;$('#inv-cat').onchange=renderInv;$('#inv-subcat').onchange=renderInv;$('#inv-name').onchange=renderInv;$('#est-search').oninput=renderEst;$('#est-cat').onchange=renderEst;$('#est-subcat').onchange=renderEst;
 
 /* --- modo selección para eliminar --- */
-$('#btn-modo-sel').onclick=()=>toggleModoSeleccion(!modoSeleccion);
+$('#btn-modo-sel').onclick=()=>toggleModoSeleccion(!modoSel.inv);
 $('#btn-cancelar-sel').onclick=()=>toggleModoSeleccion(false);
 $('#check-todos').onchange=(e)=>{
   const visibles=invFiltrado();
@@ -1654,7 +1682,85 @@ $('#btn-eliminar-sel').onclick=async()=>{
     toast({kind:'ok',icon:'🗑',msg:`${n} producto${n===1?'':'s'} eliminado${n===1?'':'s'}`,long:true});
   }catch(e){toast({kind:'err',title:'Error al eliminar',msg:e.message,long:true});}
 };
+
+/* --- modo selección para MOVIMIENTOS --- */
+function actualizarBarraSelMov(){
+  const info=$('#sel-info-mov');
+  if(info)info.textContent=selItems.mov.size+(selItems.mov.size===1?' seleccionado':' seleccionados');
+  const todos=$('#check-todos-mov');
+  if(todos){const vis=movsFiltrados('mov');todos.checked=vis.length>0&&vis.every(m=>selItems.mov.has(m.id));}
+}
+function toggleModoSelMov(activar){
+  modoSel.mov=activar;selItems.mov.clear();
+  $('#barra-seleccion-mov').style.display=activar?'flex':'none';
+  $('#btn-modo-sel-mov').style.background=activar?'var(--rojo-bg)':'var(--panel)';
+  renderMov();actualizarBarraSelMov();
+}
+$('#btn-modo-sel-mov').onclick=()=>toggleModoSelMov(!modoSel.mov);
+$('#btn-cancelar-sel-mov').onclick=()=>toggleModoSelMov(false);
+$('#check-todos-mov').onchange=(e)=>{
+  const vis=movsFiltrados('mov');
+  if(e.target.checked)vis.forEach(m=>selItems.mov.add(m.id));else vis.forEach(m=>selItems.mov.delete(m.id));
+  renderMov();actualizarBarraSelMov();
+};
+$('#btn-eliminar-sel-mov').onclick=async()=>{
+  if(!selItems.mov.size){toast({kind:'info',msg:'No has seleccionado ningún movimiento'});return;}
+  const n=selItems.mov.size;
+  if(!(await confirmar(`Se eliminarán ${n} movimiento${n===1?'':'s'} del historial. El stock se recalculará. Esta acción no se puede deshacer. ¿Continuar?`,'Eliminar movimientos')))return;
+  const ids=[...selItems.mov];
+  try{
+    if(MODO_PREVIEW){movimientos=movimientos.filter(m=>!selItems.mov.has(m.id));toggleModoSelMov(false);render();toast({kind:'ok',icon:'🗑',msg:`${n} movimiento${n===1?'':'s'} eliminado${n===1?'':'s'}`});return;}
+    let pend=ids.slice();
+    while(pend.length){
+      const lote=pend.splice(0,400);
+      const batch=writeBatch(db);
+      lote.forEach(id=>batch.delete(doc(db,'negocios',ROOT_ID,'empresas',DATA_ID,'movimientos',id)));
+      await batch.commit();
+    }
+    toggleModoSelMov(false);
+    toast({kind:'ok',icon:'🗑',msg:`${n} movimiento${n===1?'':'s'} eliminado${n===1?'':'s'}`,long:true});
+  }catch(e){toast({kind:'err',title:'Error al eliminar',msg:e.message,long:true});}
+};
 initDateFilters();
+
+/* --- modo selección para ESTADÍSTICAS (elimina productos) --- */
+function actualizarBarraSelEst(){
+  const info=$('#sel-info-est');
+  if(info)info.textContent=selItems.est.size+(selItems.est.size===1?' seleccionado':' seleccionados');
+  const todos=$('#check-todos-est');
+  if(todos){const vis=estFiltrados();todos.checked=vis.length>0&&vis.every(p=>selItems.est.has(p.code));}
+}
+function toggleModoSelEst(activar){
+  modoSel.est=activar;selItems.est.clear();
+  $('#barra-seleccion-est').style.display=activar?'flex':'none';
+  $('#btn-modo-sel-est').style.background=activar?'var(--rojo-bg)':'var(--panel)';
+  renderEst();actualizarBarraSelEst();
+}
+$('#btn-modo-sel-est').onclick=()=>toggleModoSelEst(!modoSel.est);
+$('#btn-cancelar-sel-est').onclick=()=>toggleModoSelEst(false);
+$('#check-todos-est').onchange=(e)=>{
+  const vis=estFiltrados();
+  if(e.target.checked)vis.forEach(p=>selItems.est.add(p.code));else vis.forEach(p=>selItems.est.delete(p.code));
+  renderEst();actualizarBarraSelEst();
+};
+$('#btn-eliminar-sel-est').onclick=async()=>{
+  if(!selItems.est.size){toast({kind:'info',msg:'No has seleccionado ningún producto'});return;}
+  const n=selItems.est.size;
+  if(!(await confirmar(`Se eliminarán ${n} producto${n===1?'':'s'} seleccionado${n===1?'':'s'}. El historial de movimientos se conserva, pero los productos desaparecen del inventario. Esta acción no se puede deshacer. ¿Continuar?`,'Eliminar seleccionados')))return;
+  const codigos=[...selItems.est];
+  try{
+    if(MODO_PREVIEW){productos=productos.filter(p=>!selItems.est.has(p.code));toggleModoSelEst(false);render();toast({kind:'ok',icon:'🗑',msg:`${n} producto${n===1?'':'s'} eliminado${n===1?'':'s'}`});return;}
+    let pend=codigos.slice();
+    while(pend.length){
+      const lote=pend.splice(0,400);
+      const batch=writeBatch(db);
+      lote.forEach(code=>batch.delete(doc(db,'negocios',ROOT_ID,'empresas',DATA_ID,'productos',code)));
+      await batch.commit();
+    }
+    toggleModoSelEst(false);
+    toast({kind:'ok',icon:'🗑',msg:`${n} producto${n===1?'':'s'} eliminado${n===1?'':'s'}`,long:true});
+  }catch(e){toast({kind:'err',title:'Error al eliminar',msg:e.message,long:true});}
+};
 
 /* ====== GENERAR CÓDIGO ÚNICO (para productos sin código de fábrica) ====== */
 $('#btn-gencode').onclick=()=>{
