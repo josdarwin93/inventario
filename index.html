@@ -355,7 +355,17 @@
 
       <!-- INVENTARIO -->
       <section class="panel-sec" id="inventario">
-        <div class="card">
+        <!-- Barra superior: botón agregar producto con menú desplegable -->
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px;position:relative">
+          <button class="btn" id="btn-agregar">＋ Agregar producto ▾</button>
+          <div id="agregar-menu" style="display:none;position:absolute;top:44px;right:0;background:var(--panel);border:1px solid var(--linea);border-radius:10px;box-shadow:0 8px 30px rgba(20,40,70,.15);z-index:30;overflow:hidden;min-width:210px">
+            <button type="button" id="opt-manual" style="display:block;width:100%;text-align:left;padding:13px 16px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:14px;color:var(--tinta)">✏️ Insertar manualmente</button>
+            <button type="button" id="opt-importar" style="display:block;width:100%;text-align:left;padding:13px 16px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:14px;color:var(--tinta);border-top:1px solid var(--linea)">📥 Importar datos (Excel/CSV)</button>
+          </div>
+        </div>
+
+        <!-- Formulario manual (oculto por defecto) -->
+        <div class="card" id="form-manual" style="display:none">
           <h3 id="prod-form-title">Nuevo producto</h3>
           <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start">
             <div style="flex:0 0 auto">
@@ -383,8 +393,8 @@
                 <div class="field"><label>Nombre</label><input id="p-name" placeholder="Ej: Lápiz HB"></div>
               </div>
               <div class="row">
-                <div class="field"><label>Categoría</label><input id="p-cat" placeholder="Ej: Equipos y Repuestos"></div>
-                <div class="field"><label>Subcategoría</label><input id="p-subcat" placeholder="Ej: Yackles"></div>
+                <div class="field"><label>Categoría</label><input id="p-cat" placeholder="Ej: Yackle"></div>
+                <div class="field"><label>Subcategoría</label><input id="p-subcat" placeholder="Ej: YT27"></div>
               </div>
               <div class="row">
                 <div class="field"><label>Presentación</label><input id="p-pres" placeholder="Ej: Unidad, Caja"></div>
@@ -400,20 +410,24 @@
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
             <button class="btn" id="btn-addprod">Guardar producto</button>
             <button class="btn ghost" id="btn-clearprod">Limpiar</button>
+            <button class="btn ghost" id="btn-cerrar-manual">Cerrar</button>
             <button class="btn ghost" id="btn-canceledit" style="display:none">Cancelar edición</button>
           </div>
         </div>
 
-        <div class="card" style="border:1px dashed var(--linea2)">
+        <!-- Importador (oculto por defecto) -->
+        <div class="card" id="form-importar" style="border:1px dashed var(--linea2);display:none">
           <h3>📥 Importar productos desde Excel o CSV</h3>
           <p style="font-size:13px;color:var(--tenue);margin-bottom:12px">Sube un archivo con tus productos y se cargarán todos de una vez. La primera fila debe tener los encabezados. Se reconocen las columnas: <b>Código</b>, <b>Nombre</b>, <b>Cantidad</b>, <b>Categoría</b>, <b>Subcategoría</b>, <b>Presentación</b>, <b>Stock mínimo</b> y <b>Precio</b>.</p>
           <input id="import-file" type="file" accept=".xlsx,.xls,.csv" style="display:none">
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
             <button class="btn" id="btn-import">Elegir archivo</button>
+            <button class="btn ghost" id="btn-cerrar-importar">Cerrar</button>
             <span id="import-status" style="font-size:13px;color:var(--tenue)"></span>
           </div>
           <div id="import-preview" style="display:none;margin-top:14px"></div>
         </div>
+
         <div class="sec-title">Hoja de inventario</div>
         <div class="filterbar">
           <input id="inv-search" placeholder="Buscar por nombre o código…">
@@ -1274,6 +1288,33 @@ $('#btn-addprod').onclick=async()=>{
 function clearProdForm(){['p-code','p-name','p-cat','p-subcat','p-pres'].forEach(i=>$('#'+i).value='');$('#p-stock').value=0;$('#p-min').value=5;$('#p-price').value='0.00';photoData='';$('#p-photo-cam').value='';$('#p-photo-gal').value='';$('#photo-menu').style.display='none';mostrarFoto('');}
 $('#btn-clearprod').onclick=()=>{if(editCode)salirEdicion();else clearProdForm();};
 
+/* ====== MENÚ "AGREGAR PRODUCTO" (manual / importar) ====== */
+$('#btn-agregar').onclick=(e)=>{
+  e.stopPropagation();
+  const m=$('#agregar-menu');
+  m.style.display=m.style.display==='none'?'block':'none';
+};
+document.addEventListener('click',(e)=>{
+  // cerrar el menú si se hace clic fuera
+  if(!e.target.closest('#btn-agregar')&&!e.target.closest('#agregar-menu')){
+    const m=$('#agregar-menu');if(m)m.style.display='none';
+  }
+});
+$('#opt-manual').onclick=()=>{
+  $('#agregar-menu').style.display='none';
+  $('#form-importar').style.display='none';
+  $('#form-manual').style.display='block';
+  $('#form-manual').scrollIntoView({behavior:'smooth',block:'start'});
+};
+$('#opt-importar').onclick=()=>{
+  $('#agregar-menu').style.display='none';
+  $('#form-manual').style.display='none';
+  $('#form-importar').style.display='block';
+  $('#form-importar').scrollIntoView({behavior:'smooth',block:'start'});
+};
+$('#btn-cerrar-manual').onclick=()=>{if(editCode)salirEdicion();$('#form-manual').style.display='none';};
+$('#btn-cerrar-importar').onclick=()=>{$('#form-importar').style.display='none';};
+
 /* ====== IMPORTAR PRODUCTOS DESDE EXCEL / CSV ====== */
 let importados=[]; // productos leídos del archivo, listos para guardar
 $('#btn-import').onclick=()=>$('#import-file').click();
@@ -1395,6 +1436,7 @@ async function confirmarImport(){
     const n=importados.length;
     importados=[];
     $('#import-preview').style.display='none';$('#import-status').textContent='';$('#import-file').value='';
+    $('#form-importar').style.display='none';
     toast({kind:'ok',title:'Importación completa',msg:`Se agregaron ${n} productos`,long:true});
   }catch(e){
     toast({kind:'err',title:'Error al importar',msg:e.message,long:true});
@@ -1418,7 +1460,9 @@ function editProd(code){
   $('#p-stock').value=p.initial||0;$('#p-stock').closest('.field').style.display='none';
   photoData=p.photo||'';mostrarFoto(photoData);
   goTab('inventario');
-  document.querySelector('#inventario .card').scrollIntoView({behavior:'smooth',block:'start'});
+  $('#form-importar').style.display='none';
+  $('#form-manual').style.display='block';
+  $('#form-manual').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function salirEdicion(){
   editCode=null;
