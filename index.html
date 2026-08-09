@@ -667,6 +667,9 @@
           <div class="kpi"><div class="n" id="k-stock">0</div><div class="l">Unidades en stock</div></div>
           <div class="kpi"><div class="n" id="k-mov">0</div><div class="l">Movimientos</div></div>
           <div class="kpi alert"><div class="n" id="k-low">0</div><div class="l">Productos en stock bajo</div></div>
+          <div class="kpi"><div class="n" id="k-sinmov">0</div><div class="l">Productos sin movimiento</div></div>
+          <div class="kpi" style="border-left:3px solid var(--ambar)"><div class="n" id="k-valmerma">$0</div><div class="l">Valor perdido en mermas</div></div>
+          <div class="kpi" style="border-left:3px solid var(--ambar)"><div class="n" id="k-catmerma" style="font-size:18px">—</div><div class="l">Categoría con más mermas</div></div>
         </div>
         <div class="dash-grid">
           <div class="card" style="margin:0"><h3>Más salidas</h3><div id="dash-top-sal"></div><div class="empty" id="dash-top-sal-empty" style="padding:24px"><div class="big">Sin salidas aún</div></div></div>
@@ -1326,6 +1329,23 @@ function renderDash(){
   const totVal=productos.reduce((a,p)=>a+stockOf(p.code)*(p.price||0),0);
   const low=productos.filter(p=>stockOf(p.code)<=(p.min||0));
   $('#k-val').textContent=money(totVal);$('#k-prod').textContent=productos.length;$('#k-stock').textContent=totStock;$('#k-mov').textContent=movsF.length;$('#k-low').textContent=low.length;
+
+  // --- Métricas avanzadas ---
+  // 1) Productos sin movimiento: los que no tienen ninguna entrada, salida ni merma registrada
+  const codigosConMov=new Set(movsF.map(m=>m.code));
+  const sinMov=productos.filter(p=>!codigosConMov.has(p.code));
+  $('#k-sinmov').textContent=sinMov.length;
+
+  // 2) Valor perdido en mermas: suma de (cantidad de merma × precio del producto)
+  let valMerma=0;
+  movsF.filter(m=>m.type==='merma').forEach(m=>{const p=prodOf(m.code);if(p)valMerma+=m.qty*(p.price||0);});
+  $('#k-valmerma').textContent=money(valMerma);
+
+  // 3) Categoría con más mermas (por cantidad de unidades mermadas)
+  const mermaPorCat={};
+  movsF.filter(m=>m.type==='merma').forEach(m=>{const p=prodOf(m.code);const cat=(p&&p.cat)?p.cat:'Sin categoría';mermaPorCat[cat]=(mermaPorCat[cat]||0)+m.qty;});
+  const catsMerma=Object.entries(mermaPorCat).sort((a,b)=>b[1]-a[1]);
+  $('#k-catmerma').textContent=catsMerma.length?`${catsMerma[0][0]} (${catsMerma[0][1]})`:'—';
   // Tres rankings: salidas, entradas y mermas (top 6 cada uno)
   function pintarTop(campo,idDiv,idEmpty,color){
     const tops=productos.map(p=>({name:p.name,v:statsOf(p.code)[campo]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,6);
