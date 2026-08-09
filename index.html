@@ -95,13 +95,20 @@
 
   .tablecard{background:var(--panel);border:1px solid var(--linea);border-radius:10px;overflow:hidden;margin-bottom:22px}
   .tablescroll{overflow-x:auto}
-  table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap}
   th{text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--tenue);background:var(--bg);font-weight:700;padding:10px 8px;border-bottom:1px solid var(--linea)}
   th.r{text-align:center}
   td{padding:10px 8px;border-bottom:1px solid var(--linea);text-align:center}
   td.r{text-align:center}
   tbody tr:last-child td{border-bottom:none}
   tbody tr:hover{background:#f8fafc}
+  /* en móvil: columnas más compactas y nombre acotado para que no se separen */
+  @media(max-width:900px){
+    table{font-size:12px}
+    th,td{padding:9px 6px}
+    #tbl-inv td:nth-child(3),#tbl-inv th:nth-child(3){max-width:130px;overflow:hidden;text-overflow:ellipsis;text-align:left}
+    #tbl-inv td:nth-child(2),#tbl-inv th:nth-child(2){text-align:left}
+  }
   .mono{font-family:'SF Mono',Consolas,monospace;font-size:12.5px}
   .qty-strong{font-weight:700}
 
