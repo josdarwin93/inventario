@@ -493,7 +493,6 @@
           <select id="mov-type"><option value="">Todos los tipos</option><option value="in">Entradas</option><option value="out">Salidas</option><option value="merma">Mermas</option></select>
           <button id="btn-modo-sel-mov" title="Seleccionar para eliminar" style="background:var(--panel);border:1px solid var(--linea2);border-radius:9px;padding:8px 11px;cursor:pointer;font-size:16px;line-height:1">🗑️</button>
           <div class="spacer"></div>
-          <button class="btn danger sm" id="btn-clear-mov">🗑 Eliminar todo</button>
           <div class="filebtns">
           <button class="btn-file" id="btn-pdf-mov" title="Descargar PDF" aria-label="Descargar PDF">
             <svg viewBox="0 0 48 56" fill="none"><path d="M6 2h26l10 10v42a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#111" stroke-width="2.5"/><path d="M32 2v10h10" fill="#fff" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/><rect x="4" y="36" width="30" height="16" rx="2" fill="#e2231a"/><text x="19" y="48" font-family="Arial" font-weight="bold" font-size="11" fill="#fff" text-anchor="middle">PDF</text></svg>
@@ -514,7 +513,7 @@
         </div>
         <div class="tablecard"><div class="tablescroll">
           <table id="tbl-mov">
-            <thead><tr><th id="th-check-mov" class="col-check" style="display:none"><input type="checkbox" id="check-todos-mov" title="Marcar todos"></th><th>Fecha</th><th>Hora</th><th>Código</th><th>Nombre</th><th>Tipo</th><th class="r">Cantidad</th><th>Usuario</th><th class="r">Stock Resultante</th><th>Motivo</th><th></th></tr></thead>
+            <thead><tr><th id="th-check-mov" class="col-check" style="display:none"><input type="checkbox" id="check-todos-mov" title="Marcar todos"></th><th>Fecha</th><th>Hora</th><th>Código</th><th>Nombre</th><th>Tipo</th><th class="r">Cantidad</th><th>Usuario</th><th class="r">Stock Resultante</th><th>Motivo</th></tr></thead>
             <tbody></tbody>
           </table>
           <div class="empty" id="empty-mov"><div class="big">Sin movimientos</div>Escanea un producto y registra una entrada, salida o merma.</div>
@@ -1292,9 +1291,8 @@ function renderMov(){
   list.forEach(m=>{
     const chk=`<td class="col-check" style="${modoSel.mov?'':'display:none'}"><input type="checkbox" class="row-check" data-checkmov="${esc(m.id)}" ${selItems.mov.has(m.id)?'checked':''}></td>`;
     tb.insertAdjacentHTML('beforeend',`<tr>${chk}<td>${dPart(m.ts)}</td><td>${hPart(m.ts)}</td><td class="mono">${esc(m.code)}</td><td>${esc(nameOf(m.code))}</td>
-    <td>${typeTag[m.type]}</td><td class="r qty-strong">${m.type==='in'?'+':'−'}${m.qty}</td><td>${esc(m.user||'—')}</td><td class="r qty-strong">${m.result}</td><td>${esc(m.reason||'—')}</td><td class="r"><button class="btn danger sm" data-delmov="${esc(m.id)}">Eliminar</button></td></tr>`);
+    <td>${typeTag[m.type]}</td><td class="r qty-strong">${m.type==='in'?'+':'−'}${m.qty}</td><td>${esc(m.user||'—')}</td><td class="r qty-strong">${m.result}</td><td>${esc(m.reason||'—')}</td></tr>`);
   });
-  tb.querySelectorAll('[data-delmov]').forEach(b=>b.onclick=()=>delMov(b.dataset.delmov));
   tb.querySelectorAll('[data-checkmov]').forEach(c=>c.onchange=()=>{
     if(c.checked)selItems.mov.add(c.dataset.checkmov);else selItems.mov.delete(c.dataset.checkmov);
     actualizarBarraSelMov();
@@ -1632,22 +1630,6 @@ async function delMov(id){
     await deleteDoc(doc(db,'negocios',ROOT_ID,'empresas',DATA_ID,'movimientos',id));toast({kind:'info',icon:'🗑',msg:'Movimiento eliminado · stock recalculado'});}
   catch(e){toast({kind:'err',msg:e.message});}
 }
-$('#btn-clear-mov').onclick=async()=>{
-  if(!movimientos.length){toast({kind:'info',msg:'No hay movimientos para eliminar'});return;}
-  if(!(await confirmar(`Se eliminarán TODOS los movimientos (${movimientos.length}). Los productos y su stock inicial se conservan, pero el historial se borra y el stock vuelve al inicial. Esta acción no se puede deshacer. ¿Continuar?`,'Eliminar todo el historial')))return;
-  if(MODO_PREVIEW){movimientos=[];render();toast({kind:'ok',icon:'🗑',msg:'Historial de movimientos eliminado'});return;}
-  try{
-    // borrar en lotes de 400 (límite de Firestore por batch: 500)
-    let pendientes=movimientos.slice();
-    while(pendientes.length){
-      const lote=pendientes.splice(0,400);
-      const batch=writeBatch(db);
-      lote.forEach(m=>batch.delete(doc(db,'negocios',ROOT_ID,'empresas',DATA_ID,'movimientos',m.id)));
-      await batch.commit();
-    }
-    toast({kind:'ok',icon:'🗑',msg:'Historial de movimientos eliminado'});
-  }catch(e){toast({kind:'err',title:'No se pudo eliminar',msg:e.message,long:true});}
-};
 $('#inv-search').oninput=renderInv;$('#inv-cat').onchange=renderInv;$('#inv-subcat').onchange=renderInv;$('#inv-name').onchange=renderInv;$('#est-search').oninput=renderEst;$('#est-cat').onchange=renderEst;$('#est-subcat').onchange=renderEst;
 
 /* --- modo selección para eliminar --- */
