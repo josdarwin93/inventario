@@ -362,8 +362,9 @@
 
       <!-- INVENTARIO -->
       <section class="panel-sec" id="inventario">
-        <!-- Barra superior: botón agregar producto con menú desplegable -->
-        <div style="display:flex;justify-content:flex-end;margin-bottom:14px;position:relative">
+        <!-- Barra superior: registrar movimiento + agregar producto, uno al lado del otro -->
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:14px;position:relative">
+          <button class="btn" id="inv-mov">＋ Registrar movimiento</button>
           <button class="btn" id="btn-agregar">＋ Agregar producto ▾</button>
           <div id="agregar-menu" style="display:none;position:absolute;top:44px;right:0;background:var(--panel);border:1px solid var(--linea);border-radius:10px;box-shadow:0 8px 30px rgba(20,40,70,.15);z-index:30;overflow:hidden;min-width:210px">
             <button type="button" id="opt-manual" style="display:block;width:100%;text-align:left;padding:13px 16px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:14px;color:var(--tinta)">✏️ Insertar manualmente</button>
@@ -465,62 +466,6 @@
 
       <!-- MOVIMIENTOS -->
       <section class="panel-sec" id="movimientos">
-        <div class="scan-mode">
-          <button class="on" data-mode="scan">📷 Escanear</button>
-          <button data-mode="manual">⌨ Ingresar código</button>
-        </div>
-        <div id="mode-scan">
-          <div class="scanbox">
-            <h3>Escáner de código de barras</h3>
-            <video id="video" playsinline autoplay muted></video>
-            <div class="scan-controls">
-              <button class="btn ghost sm" id="btn-scan" style="background:#fff">Iniciar cámara</button>
-              <button class="btn ghost sm" id="btn-stop" style="display:none;background:#fff">Detener</button>
-              <select id="cam-select" style="display:none;max-width:200px;background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.3)"></select>
-            </div>
-            <div class="hint" id="scan-status" style="display:none"></div>
-            <div class="hint">Apunta la cámara al código. Cuando el producto exista, aparecerán los botones de Entrada, Salida o Merma.</div>
-          </div>
-        </div>
-        <div id="mode-manual" style="display:none">
-          <div class="card">
-            <h3>Ingresar código manualmente</h3>
-            <div class="manual-row">
-              <div class="field"><label>Código de barras</label><input id="m-code-manual" placeholder="Escribe o pega el código y pulsa Enter" autocomplete="off"></div>
-              <button class="btn" id="btn-buscar">Buscar producto</button>
-            </div>
-            <div class="hint dark">También sirve con pistola lectora: enfoca el campo y dispara.</div>
-          </div>
-        </div>
-
-        <div class="notfound" id="notfound">
-          <span class="ic">⚠</span>
-          <div class="tx"><b>Producto no registrado</b>El código <span class="mono" id="nf-code"></span> no está en el inventario.</div>
-          <button class="btn sm" id="nf-create">Crear producto</button>
-        </div>
-
-        <div class="prodcard" id="prodcard">
-          <div class="pc-head">
-            <div class="pc-icon" id="pc-icon">📦</div>
-            <div class="pc-info"><div class="nm" id="pc-name">—</div><div class="meta" id="pc-meta">—</div></div>
-            <div class="pc-stock" id="pc-stock"><div class="num" id="pc-stocknum">0</div><div class="lbl">En stock</div></div>
-          </div>
-          <div class="pc-body">
-            <div class="pc-qtyrow">
-              <div class="field"><label>Cantidad del movimiento</label>
-                <div class="qty-stepper"><button id="qty-minus" type="button">−</button><input id="pc-qty" type="number" min="1" value="1"><button id="qty-plus" type="button">＋</button></div>
-              </div>
-              <div class="field" style="flex:1;min-width:160px"><label>Usuario (opcional)</label><input id="pc-user" placeholder="Quién registra" autocomplete="off"></div>
-            </div>
-            <div class="pc-actions">
-              <button class="act in" data-act="in"><span class="big">＋ Entrada</span><span class="sub">Suma al stock</span></button>
-              <button class="act out" data-act="out"><span class="big">− Salida</span><span class="sub">Resta del stock</span></button>
-              <button class="act merma" data-act="merma"><span class="big">⚠ Merma</span><span class="sub">Pérdida / daño</span></button>
-            </div>
-            <div class="pc-extra"><div class="field"><label>Motivo / nota (opcional)</label><input id="pc-reason" placeholder="Ej: venta mostrador, vencido…" autocomplete="off"></div></div>
-          </div>
-        </div>
-
         <div class="sec-title">Hoja de movimientos</div>
         <div class="datefilter">
           <span class="df-label">Fecha:</span>
@@ -744,6 +689,65 @@
       <button class="btn ghost" id="bc-download">⬇ Descargar imagen</button>
     </div>
     <div class="hint dark" style="text-align:center;margin-top:10px">Imprime y pega la etiqueta en el producto. Luego podrás escanearla con la app.</div>
+  </div>
+</div>
+
+<!-- MODAL: Registrar movimiento (escáner + tarjeta de producto) -->
+<div class="bc-overlay" id="mov-overlay">
+  <div class="bc-modal" style="max-width:560px">
+    <button class="bc-close" id="mov-close">✕</button>
+    <h3>Registrar movimiento</h3>
+    <div class="scan-mode">
+      <button class="on" data-mode="scan">📷 Escanear</button>
+      <button data-mode="manual">⌨ Ingresar código</button>
+    </div>
+    <div id="mode-scan">
+      <div class="scanbox">
+        <video id="video" playsinline autoplay muted></video>
+        <div class="scan-controls">
+          <button class="btn ghost sm" id="btn-scan" style="background:#fff">Iniciar cámara</button>
+          <button class="btn ghost sm" id="btn-stop" style="display:none;background:#fff">Detener</button>
+          <select id="cam-select" style="display:none;max-width:200px;background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.3)"></select>
+        </div>
+        <div class="hint" id="scan-status" style="display:none"></div>
+        <div class="hint">Apunta la cámara al código. Cuando el producto exista, aparecerán los botones de Entrada, Salida o Merma.</div>
+      </div>
+    </div>
+    <div id="mode-manual" style="display:none">
+      <div class="manual-row">
+        <div class="field"><label>Código de barras</label><input id="m-code-manual" placeholder="Escribe o pega el código y pulsa Enter" autocomplete="off"></div>
+        <button class="btn" id="btn-buscar">Buscar producto</button>
+      </div>
+      <div class="hint dark">También sirve con pistola lectora: enfoca el campo y dispara.</div>
+    </div>
+
+    <div class="notfound" id="notfound">
+      <span class="ic">⚠</span>
+      <div class="tx"><b>Producto no registrado</b>El código <span class="mono" id="nf-code"></span> no está en el inventario.</div>
+      <button class="btn sm" id="nf-create">Crear producto</button>
+    </div>
+
+    <div class="prodcard" id="prodcard">
+      <div class="pc-head">
+        <div class="pc-icon" id="pc-icon">📦</div>
+        <div class="pc-info"><div class="nm" id="pc-name">—</div><div class="meta" id="pc-meta">—</div></div>
+        <div class="pc-stock" id="pc-stock"><div class="num" id="pc-stocknum">0</div><div class="lbl">En stock</div></div>
+      </div>
+      <div class="pc-body">
+        <div class="pc-qtyrow">
+          <div class="field"><label>Cantidad del movimiento</label>
+            <div class="qty-stepper"><button id="qty-minus" type="button">−</button><input id="pc-qty" type="number" min="1" value="1"><button id="qty-plus" type="button">＋</button></div>
+          </div>
+          <div class="field" style="flex:1;min-width:160px"><label>Usuario (opcional)</label><input id="pc-user" placeholder="Quién registra" autocomplete="off"></div>
+        </div>
+        <div class="pc-actions">
+          <button class="act in" data-act="in"><span class="big">＋ Entrada</span><span class="sub">Suma al stock</span></button>
+          <button class="act out" data-act="out"><span class="big">− Salida</span><span class="sub">Resta del stock</span></button>
+          <button class="act merma" data-act="merma"><span class="big">⚠ Merma</span><span class="sub">Pérdida / daño</span></button>
+        </div>
+        <div class="pc-extra"><div class="field"><label>Motivo / nota (opcional)</label><input id="pc-reason" placeholder="Ej: venta mostrador, vencido…" autocomplete="off"></div></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1036,11 +1040,30 @@ function goTab(tab){
   $$('.panel-sec').forEach(x=>x.classList.toggle('on',x.id===tab));
   $('#page-title').textContent=titles[tab][0];$('#page-crumb').textContent=titles[tab][1];
   // el botón "Registrar movimiento" es un atajo: se oculta si ya estamos en Movimientos
-  $('#quick-mov').style.display=(tab==='movimientos'||tab==='ayuda'||tab==='novedades'||tab==='privacidad'||tab==='empresa')?'none':'';
+  $('#quick-mov').style.display=(tab==='movimientos'||tab==='inventario'||tab==='ayuda'||tab==='novedades'||tab==='privacidad'||tab==='empresa')?'none':'';
   closeSide();
 }
 $$('.side nav button').forEach(b=>b.onclick=()=>goTab(b.dataset.tab));
-$('#quick-mov').onclick=()=>goTab('movimientos');
+/* ====== MODAL REGISTRAR MOVIMIENTO ====== */
+function abrirModalMov(){
+  $('#mov-overlay').classList.add('show');
+  // limpiar estado previo
+  hideCards();
+  // volver al modo escanear por defecto
+  $$('.scan-mode button').forEach(x=>x.classList.remove('on'));
+  const scanBtn=document.querySelector('.scan-mode button[data-mode="scan"]');
+  if(scanBtn)scanBtn.classList.add('on');
+  $('#mode-scan').style.display='';$('#mode-manual').style.display='none';
+}
+function cerrarModalMov(){
+  $('#mov-overlay').classList.remove('show');
+  try{stopScan();}catch(e){}
+  hideCards();
+}
+$('#quick-mov').onclick=abrirModalMov;
+$('#inv-mov').onclick=abrirModalMov;
+$('#mov-close').onclick=cerrarModalMov;
+$('#mov-overlay').onclick=(e)=>{if(e.target.id==='mov-overlay')cerrarModalMov();};
 function openSide(){$('#side').classList.add('open');$('#backdrop').classList.add('show');}
 function closeSide(){$('#side').classList.remove('open');$('#backdrop').classList.remove('show');}
 $('#menu-btn').onclick=openSide;$('#backdrop').onclick=closeSide;
@@ -1619,14 +1642,14 @@ async function registrarDesdeCard(type){
       const nuevoStock=stockAntes+(type==='in'?qty:-qty);
       const verbo={in:'Entrada registrada',out:'Salida registrada',merma:'Merma registrada'}[type];
       render();toast({kind:'ok',title:verbo,msg:`${p.name} · ${type==='in'?'+':'−'}${qty} · stock ahora: ${nuevoStock}`});
-      $('#pc-qty').value=1;$('#pc-reason').value='';return;
+      $('#pc-qty').value=1;$('#pc-reason').value='';cerrarModalMov();return;
     }
     await addDoc(movCol(),{code,type,qty,user:$('#pc-user').value.trim(),reason:$('#pc-reason').value.trim(),ts:serverTimestamp()});
     const nuevoStock=stockAntes+(type==='in'?qty:-qty);
     const verbo={in:'Entrada registrada',out:'Salida registrada',merma:'Merma registrada'}[type];
     toast({kind:'ok',title:verbo,msg:`${p.name} · ${type==='in'?'+':'−'}${qty} · stock ahora: ${nuevoStock}`});
     if(nuevoStock<=(p.min||0))toast({kind:'warn',title:'⚠ Stock bajo',msg:`${p.name} quedó en ${nuevoStock} (mínimo ${p.min||0}). Conviene reponer.`,long:true});
-    $('#pc-qty').value=1;$('#pc-reason').value='';
+    $('#pc-qty').value=1;$('#pc-reason').value='';cerrarModalMov();
   }catch(e){toast({kind:'err',title:'No se pudo registrar',msg:e.message,long:true});}
 }
 $$('.pc-actions .act').forEach(b=>b.onclick=()=>registrarDesdeCard(b.dataset.act));
