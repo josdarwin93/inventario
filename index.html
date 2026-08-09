@@ -334,7 +334,7 @@
     <div class="logo"><span class="dot"></span>ControlStock</div>
     <div style="height:6px"></div>
     <nav>
-      <button class="on" data-tab="dashboard"><span class="ic">📈</span>Dashboard</button>
+      <button class="on" data-tab="dashboard"><span class="ic">📈</span>Resumen</button>
       <button data-tab="inventario"><span class="ic">📦</span>Inventario</button>
       <button data-tab="movimientos"><span class="ic">🔄</span>Movimientos</button>
       <button data-tab="estadisticas"><span class="ic">📊</span>Estadísticas</button>
@@ -355,7 +355,7 @@
     <div class="topbar">
       <div style="display:flex;align-items:center;gap:14px">
         <button class="menu-btn" id="menu-btn">☰</button>
-        <div><h1 id="page-title">Dashboard</h1><div class="crumb" id="page-crumb">Almacén · Resumen general</div></div>
+        <div><h1 id="page-title">Resumen</h1><div class="crumb" id="page-crumb">Almacén · Resumen general</div></div>
       </div>
       <button class="btn sm" id="quick-mov">＋ Registrar movimiento</button>
     </div>
@@ -581,7 +581,7 @@
           <p>En <b>Inventario</b>, cada producto tiene un botón <b>Código</b> que muestra su código de barras para imprimir y pegar en el producto.</p>
 
           <h3>4. Ver tus estadísticas</h3>
-          <p>El <b>Dashboard</b> te muestra el valor de tu inventario, productos en stock bajo y los más movidos. En <b>Estadísticas</b> ves el detalle por producto.</p>
+          <p>El <b>Resumen</b> te muestra el valor de tu inventario, productos en stock bajo y los más movidos. En <b>Estadísticas</b> ves el detalle por producto.</p>
 
           <h3>5. Exportar reportes</h3>
           <p>En Inventario, Movimientos y Estadísticas hay botones para descargar tus datos en <b>PDF</b>, <b>Excel</b> o <b>CSV</b>.</p>
@@ -604,7 +604,7 @@
             <h3>Lo más reciente</h3>
             <ul>
               <li>Nuevo diseño con paleta de colores renovada.</li>
-              <li>Tres gráficos en el Dashboard: más salidas, más entradas y más mermas.</li>
+              <li>Tres gráficos en el Resumen: más salidas, más entradas y más mermas.</li>
               <li>Filtros por categoría y por nombre de producto en el inventario.</li>
               <li>Generación de códigos de barra para imprimir.</li>
               <li>Reportes en PDF, Excel y CSV en todas las secciones.</li>
@@ -1064,7 +1064,7 @@ function stockOf(code){const p=prodOf(code);return(p?p.initial||0:0)+deltaOf(cod
 function lastUpdate(code){const ms=movimientos.filter(m=>m.code===code);return ms.length?ms[ms.length-1].ts:(prodOf(code)||{}).created;}
 
 /* ====== navegación ====== */
-const titles={inventario:['Inventario','Almacén · Existencias'],movimientos:['Movimientos','Almacén · Entradas, salidas y mermas'],estadisticas:['Estadísticas','Almacén · Control por producto'],dashboard:['Dashboard','Almacén · Resumen general'],empresa:['Datos de la empresa','Membrete de los reportes'],ayuda:['Ayuda','Guía de uso'],novedades:['Novedades','Últimas mejoras'],privacidad:['Política de privacidad','Tus datos']};
+const titles={inventario:['Inventario','Almacén · Existencias'],movimientos:['Movimientos','Almacén · Entradas, salidas y mermas'],estadisticas:['Estadísticas','Almacén · Control por producto'],dashboard:['Resumen','Almacén · Resumen general'],empresa:['Datos de la empresa','Membrete de los reportes'],ayuda:['Ayuda','Guía de uso'],novedades:['Novedades','Últimas mejoras'],privacidad:['Política de privacidad','Tus datos']};
 function goTab(tab){
   $$('.side nav button').forEach(x=>x.classList.toggle('on',x.dataset.tab===tab));
   $$('.panel-sec').forEach(x=>x.classList.toggle('on',x.id===tab));
