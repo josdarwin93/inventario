@@ -1628,7 +1628,6 @@ function pdfBase(titulo){
   docp.text(titulo,40,52);
   docp.setFontSize(9);
   docp.text(`${fecha} · ${hora}`,W-40,52,{align:'right'});
-  docp.text(user.email||'',W-40,34,{align:'right'});
   return {docp,W,ahora};
 }
 function pdfPie(docp){
