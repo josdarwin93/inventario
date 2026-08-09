@@ -1724,21 +1724,31 @@ async function startScan(){
   $('#btn-scan').style.display='none';$('#btn-stop').style.display='inline-flex';
   scanStatus('Abriendo cámara…');
   try{
-    // 1) Pedimos la cámara trasera directamente con facingMode (lo más compatible)
+    // 1) Pedimos la cámara trasera con buena resolución y enfoque continuo
     let constraints;
     if(camList.length && camList[camIndex]){
-      constraints={video:{deviceId:{exact:camList[camIndex].deviceId}}};
+      constraints={video:{deviceId:{exact:camList[camIndex].deviceId},width:{ideal:1280},height:{ideal:720},focusMode:'continuous'}};
     }else{
-      constraints={video:{facingMode:{ideal:'environment'}}};
+      constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720},focusMode:'continuous'}};
     }
     let stream;
     try{
       stream=await navigator.mediaDevices.getUserMedia(constraints);
     }catch(e1){
-      // si falla con la cámara específica, intentamos con cualquiera
-      stream=await navigator.mediaDevices.getUserMedia({video:true});
+      // si falla con esas condiciones, intentamos con cualquiera
+      try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});}
+      catch(e2){stream=await navigator.mediaDevices.getUserMedia({video:true});}
     }
     currentStream=stream;
+
+    // intentar activar el autofoco por si el dispositivo lo soporta
+    try{
+      const track=stream.getVideoTracks()[0];
+      const caps=track.getCapabilities?track.getCapabilities():{};
+      if(caps.focusMode&&caps.focusMode.includes('continuous')){
+        await track.applyConstraints({advanced:[{focusMode:'continuous'}]});
+      }
+    }catch(eFocus){}
 
     // 2) Conectamos el stream al video y forzamos su reproducción
     const video=$('#video');
@@ -1759,10 +1769,18 @@ async function startScan(){
       if(camList.length>1)sel.style.display='inline-block';
     }
 
-    scanStatus('Cámara activa. Apunta al código de barras.');
+    scanStatus('Cámara activa. Acerca el código y mantenlo firme.');
 
-    // 4) Ahora sí, le pasamos el stream YA ABIERTO a la librería para que lea
-    reader=new ZXing.BrowserMultiFormatReader();
+    // 4) Configuramos el lector priorizando los formatos de código de barras lineales
+    const hints=new Map();
+    try{
+      const F=ZXing.BarcodeFormat;
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[
+        F.CODE_128,F.CODE_39,F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.ITF,F.CODABAR
+      ]);
+      hints.set(ZXing.DecodeHintType.TRY_HARDER,true);
+    }catch(eh){}
+    reader=new ZXing.BrowserMultiFormatReader(hints,300); // 300ms entre intentos
     reader.decodeFromStream(stream,video,(result)=>{
       if(!result)return;
       const now=Date.now(),code=result.getText();
