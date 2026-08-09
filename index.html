@@ -1931,12 +1931,10 @@ async function startScan(){
       }
     }catch(eFocus){}
 
-    // 2) Conectamos el stream al video y forzamos su reproducción
+    // 2) Conectamos el stream solo para tener permiso y listar cámaras
     const video=$('#video');
-    video.srcObject=stream;
     video.setAttribute('playsinline','');video.muted=true;
     video.style.display='block';
-    try{await video.play();}catch(ePlay){/* algunos navegadores reproducen solos */}
 
     // 3) Llenamos la lista de cámaras (ahora sí tenemos permiso y etiquetas)
     if(!camList.length){
@@ -1949,27 +1947,29 @@ async function startScan(){
       camIndex=backIdx>=0?backIdx:0;sel.value=String(camIndex);
       if(camList.length>1)sel.style.display='inline-block';
     }
+    // cerramos el stream de prueba: la librería abrirá el suyo
+    try{stream.getTracks().forEach(t=>t.stop());}catch(e){}
+    currentStream=null;
 
     scanStatus('Cámara activa. Acerca el código y mantenlo firme.');
 
-    // 4) Configuramos el lector priorizando los formatos de código de barras lineales
+    // 4) La librería ZXing abre la cámara y lee en bucle (lo más confiable en 0.21.3)
     const hints=new Map();
-    try{
-      const F=ZXing.BarcodeFormat;
-      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[
-        F.CODE_128,F.CODE_39,F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.ITF,F.CODABAR
-      ]);
-      hints.set(ZXing.DecodeHintType.TRY_HARDER,true);
-    }catch(eh){}
-    reader=new ZXing.BrowserMultiFormatReader(hints,300); // 300ms entre intentos
-    reader.decodeFromStream(stream,video,(result)=>{
-      if(!result)return;
-      const now=Date.now(),code=result.getText();
-      if(code===lastCode&&now-lastScan<2000)return;lastScan=now;lastCode=code;
-      if(navigator.vibrate)navigator.vibrate(110);
-      scanStatus('✓ Código leído: '+code);
-      showProductCard(code);
-      if(!prodOf(code))toast({kind:'warn',title:'Código no registrado',msg:code});
+    try{hints.set(ZXing.DecodeHintType.TRY_HARDER,true);}catch(eh){}
+    try{reader=new ZXing.BrowserMultiFormatReader(hints);}
+    catch(eR){reader=new ZXing.BrowserMultiFormatReader();}
+    reader.timeBetweenScansMillis=200;
+    const deviceId=(camList[camIndex]&&camList[camIndex].deviceId)||undefined;
+    reader.decodeFromVideoDevice(deviceId,video,(result,err)=>{
+      if(result){
+        const now=Date.now(),code=result.getText();
+        if(code===lastCode&&now-lastScan<2000)return;lastScan=now;lastCode=code;
+        if(navigator.vibrate)navigator.vibrate(110);
+        scanStatus('✓ Código leído: '+code);
+        showProductCard(code);
+        if(!prodOf(code))toast({kind:'warn',title:'Código no registrado',msg:code});
+      }
+      // los "NotFoundException" entre lecturas son normales; se ignoran
     });
   }catch(e){
     scanning=false;
