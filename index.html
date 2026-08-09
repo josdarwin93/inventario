@@ -96,11 +96,12 @@
   .tablecard{background:var(--panel);border:1px solid var(--linea);border-radius:10px;overflow:hidden;margin-bottom:22px}
   .tablescroll{overflow-x:auto}
   table{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap}
-  th{text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--tenue);background:var(--bg);font-weight:700;padding:10px 8px;border-bottom:1px solid var(--linea)}
+  th{text-align:center;font-size:11.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--side);background:var(--azul-bg);font-weight:800;padding:11px 8px;border-bottom:2px solid var(--azul-d)}
   th.r{text-align:center}
   td{padding:10px 8px;border-bottom:1px solid var(--linea);text-align:center}
   td.r{text-align:center}
   tbody tr:last-child td{border-bottom:none}
+  .prod-nombre{font-weight:700;color:var(--tinta)}
   tbody tr:hover{background:#f8fafc}
   /* en móvil: columnas más compactas y nombre acotado para que no se separen */
   @media(max-width:900px){
@@ -1176,7 +1177,7 @@ function renderInv(){
   $('#empty-inv').style.display=productos.length?'none':'block';
   list.forEach(p=>{const st=stockOf(p.code),low=st<=(p.min||0),lu=lastUpdate(p.code);
     const thumb=p.photo?`<img class="inv-thumb" src="${p.photo}" alt="">`:`<div class="inv-thumb-ph">📦</div>`;
-    tb.insertAdjacentHTML('beforeend',`<tr class="${low?'rowlow':''}"><td>${thumb}</td><td class="mono">${esc(p.code)}</td><td>${esc(p.name)}</td><td>${esc(p.cat||'—')}</td><td>${esc(p.subcat||'—')}</td>
+    tb.insertAdjacentHTML('beforeend',`<tr class="${low?'rowlow':''}"><td>${thumb}</td><td class="mono">${esc(p.code)}</td><td class="prod-nombre">${esc(p.name)}</td><td>${esc(p.cat||'—')}</td><td>${esc(p.subcat||'—')}</td>
       <td class="r qty-strong">${st}${low?' <span class="tag low">bajo</span>':''}</td><td>${esc(p.pres||'—')}</td><td class="r">${p.min||0}</td><td class="r">${money(p.price||0)}</td>
       <td>${lu?dPart(lu):'—'}</td><td class="r" style="white-space:nowrap"><button class="btn ghost sm" data-bc="${esc(p.code)}">Código</button> <button class="btn ghost sm" data-edit="${esc(p.code)}">Editar</button> <button class="btn danger sm" data-del="${esc(p.code)}">Eliminar</button></td></tr>`);});
   tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>delProd(b.dataset.del));
