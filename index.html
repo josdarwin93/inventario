@@ -231,9 +231,9 @@
   /* modal código de barras */
   .bc-overlay{display:none;position:fixed;inset:0;background:rgba(20,30,50,.55);z-index:250;align-items:center;justify-content:center;padding:20px}
   .bc-overlay.show{display:flex}
-  .bc-modal{background:#fff;border-radius:14px;padding:24px;max-width:420px;width:100%;position:relative;box-shadow:0 18px 50px rgba(20,40,70,.3);animation:pop .2s}
+  .bc-modal{background:#fff;border-radius:14px;padding:24px;max-width:420px;width:100%;position:relative;box-shadow:0 18px 50px rgba(20,40,70,.3);animation:pop .2s;max-height:90vh;overflow-y:auto}
   .bc-modal h3{font-size:16px;font-weight:700;margin-bottom:18px;padding-right:24px}
-  .bc-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--tenue)}
+  .bc-close{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.9);border:1px solid var(--linea);border-radius:50%;width:34px;height:34px;font-size:18px;cursor:pointer;color:var(--tinta);z-index:5;display:flex;align-items:center;justify-content:center}
   .bc-close:hover{color:var(--tinta)}
   .bc-canvas-wrap{background:#fff;border:1px solid var(--linea);border-radius:8px;padding:16px;text-align:center;overflow:auto}
   .bc-canvas-wrap svg{max-width:100%;height:auto}
@@ -752,6 +752,9 @@
         <div class="pc-extra"><div class="field"><label>Motivo / nota (opcional)</label><input id="pc-reason" placeholder="Ej: venta mostrador, vencido…" autocomplete="off"></div></div>
       </div>
     </div>
+    <div style="margin-top:16px">
+      <button class="btn ghost block" id="mov-cancelar" style="width:100%">Cancelar y volver</button>
+    </div>
   </div>
 </div>
 
@@ -1067,6 +1070,7 @@ function cerrarModalMov(){
 $('#quick-mov').onclick=abrirModalMov;
 $('#inv-mov').onclick=abrirModalMov;
 $('#mov-close').onclick=cerrarModalMov;
+$('#mov-cancelar').onclick=cerrarModalMov;
 $('#mov-overlay').onclick=(e)=>{if(e.target.id==='mov-overlay')cerrarModalMov();};
 function openSide(){$('#side').classList.add('open');$('#backdrop').classList.add('show');}
 function closeSide(){$('#side').classList.remove('open');$('#backdrop').classList.remove('show');}
